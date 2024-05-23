@@ -2,10 +2,14 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/hex"
 	"fmt"
 	"log"
+	"math/rand/v2"
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 	"github.com/odin-sofware/nyusu/internal/database"
@@ -46,4 +50,12 @@ func NewConfig() Config {
 		DB:  dbQueries,
 		Env: env,
 	}
+}
+
+func GetNewHash() string {
+	r := strconv.FormatFloat(rand.Float64(), 'f', -1, 64)
+	h := sha256.New()
+	h.Write([]byte(r))
+
+	return hex.EncodeToString(h.Sum((nil)))
 }

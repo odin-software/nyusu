@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/odin-sofware/nyusu/internal/database"
 )
 
 func main() {
@@ -23,16 +25,35 @@ func main() {
 	mux.HandleFunc("/v1/err", func(w http.ResponseWriter, r *http.Request) {
 		InternalServerErrorHandler(w)
 	})
+	mux.HandleFunc("GET /v1/users", func(w http.ResponseWriter, r *http.Request) {
+		header := r.Header.Get("Authorization")
+		key := strings.Split(header, " ")
+		if key[0] != "ApiKey" || len(key) < 2 {
+			UnathorizedHandler(w)
+			return
+		}
+		user, err := config.DB.GetUserByApiKey(config.ctx, key[1])
+		if err != nil {
+			log.Print(err)
+			NotFoundHandler(w)
+			return
+		}
+		respondWithJSON(w, 201, user)
+	})
 	mux.HandleFunc("POST /v1/users", func(w http.ResponseWriter, r *http.Request) {
 		var reqUser *struct {
 			Name string `json:"name"`
 		}
 		err := json.NewDecoder(r.Body).Decode(&reqUser)
 		if err != nil {
-			BadRequestErrorHandler(w, "Malformed create user request")
+			BadRequestHandler(w, "Malformed create user request")
 			return
 		}
-		user, err := config.DB.CreateUser(config.ctx, reqUser.Name)
+		key := GetNewHash()
+		user, err := config.DB.CreateUser(config.ctx, database.CreateUserParams{
+			Name:   reqUser.Name,
+			ApiKey: key,
+		})
 		if err != nil {
 			log.Print(err)
 			InternalServerErrorHandler(w)

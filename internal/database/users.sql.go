@@ -10,19 +10,44 @@ import (
 )
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (name)
-VALUES (?)
-RETURNING id, name, created_at, updated_at
+INSERT INTO users (name, api_key)
+VALUES (?, ?)
+RETURNING id, name, created_at, updated_at, api_key
 `
 
-func (q *Queries) CreateUser(ctx context.Context, name string) (User, error) {
-	row := q.db.QueryRowContext(ctx, createUser, name)
+type CreateUserParams struct {
+	Name   string `json:"name"`
+	ApiKey string `json:"api_key"`
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, createUser, arg.Name, arg.ApiKey)
 	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ApiKey,
+	)
+	return i, err
+}
+
+const getUserByApiKey = `-- name: GetUserByApiKey :one
+SELECT id, name, created_at, updated_at, api_key
+FROM users
+WHERE api_key = ?
+`
+
+func (q *Queries) GetUserByApiKey(ctx context.Context, apiKey string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByApiKey, apiKey)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.ApiKey,
 	)
 	return i, err
 }
