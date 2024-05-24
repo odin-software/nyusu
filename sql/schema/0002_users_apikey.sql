@@ -4,4 +4,4 @@ ADD api_key VARCHAR(64) NOT NULL DEFAULT '';
 
 -- +goose Down
 ALTER TABLE users
-DROP COLUMN api_key;
+DROP api_key;

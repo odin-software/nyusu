@@ -4,14 +4,13 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/odin-sofware/nyusu/internal/database"
 )
 
 func main() {
-	config := NewConfig()
+	cfg := NewConfig()
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/v1/readiness", func(w http.ResponseWriter, r *http.Request) {
@@ -25,21 +24,9 @@ func main() {
 	mux.HandleFunc("/v1/err", func(w http.ResponseWriter, r *http.Request) {
 		InternalServerErrorHandler(w)
 	})
-	mux.HandleFunc("GET /v1/users", func(w http.ResponseWriter, r *http.Request) {
-		header := r.Header.Get("Authorization")
-		key := strings.Split(header, " ")
-		if key[0] != "ApiKey" || len(key) < 2 {
-			UnathorizedHandler(w)
-			return
-		}
-		user, err := config.DB.GetUserByApiKey(config.ctx, key[1])
-		if err != nil {
-			log.Print(err)
-			NotFoundHandler(w)
-			return
-		}
-		respondWithJSON(w, 201, user)
-	})
+	mux.HandleFunc("GET /v1/users", cfg.middlewareAuth(func(w http.ResponseWriter, r *http.Request, user database.User) {
+		respondWithJSON(w, 200, user)
+	}))
 	mux.HandleFunc("POST /v1/users", func(w http.ResponseWriter, r *http.Request) {
 		var reqUser *struct {
 			Name string `json:"name"`
@@ -50,7 +37,7 @@ func main() {
 			return
 		}
 		key := GetNewHash()
-		user, err := config.DB.CreateUser(config.ctx, database.CreateUserParams{
+		user, err := cfg.DB.CreateUser(cfg.ctx, database.CreateUserParams{
 			Name:   reqUser.Name,
 			ApiKey: key,
 		})
@@ -61,8 +48,8 @@ func main() {
 		}
 		respondWithJSON(w, 201, user)
 	})
-	log.Printf("server is listening at %s", config.Env.Port)
-	log.Fatal(http.ListenAndServe(config.Env.Port, mux))
+	log.Printf("server is listening at %s", cfg.Env.Port)
+	log.Fatal(http.ListenAndServe(cfg.Env.Port, mux))
 }
 
 func respondWithJSON(w http.ResponseWriter, status int, payload interface{}) {

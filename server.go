@@ -2,14 +2,12 @@ package main
 
 import (
 	"context"
-	"crypto/sha256"
 	"database/sql"
-	"encoding/hex"
 	"fmt"
 	"log"
-	"math/rand/v2"
+	"net/http"
 	"os"
-	"strconv"
+	"strings"
 
 	"github.com/joho/godotenv"
 	"github.com/odin-sofware/nyusu/internal/database"
@@ -21,13 +19,15 @@ type Environment struct {
 	Port   string
 }
 
-type Config struct {
+type APIConfig struct {
 	ctx context.Context
 	DB  *database.Queries
 	Env Environment
 }
 
-func NewConfig() Config {
+type authHandler func(http.ResponseWriter, *http.Request, database.User)
+
+func NewConfig() APIConfig {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
@@ -45,17 +45,27 @@ func NewConfig() Config {
 	}
 	dbQueries := database.New(db)
 
-	return Config{
+	return APIConfig{
 		ctx: ctx,
 		DB:  dbQueries,
 		Env: env,
 	}
 }
 
-func GetNewHash() string {
-	r := strconv.FormatFloat(rand.Float64(), 'f', -1, 64)
-	h := sha256.New()
-	h.Write([]byte(r))
-
-	return hex.EncodeToString(h.Sum((nil)))
+func (cfg *APIConfig) middlewareAuth(handler authHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		header := r.Header.Get("Authorization")
+		key := strings.Split(header, " ")
+		if key[0] != "ApiKey" || len(key) < 2 {
+			UnathorizedHandler(w)
+			return
+		}
+		user, err := cfg.DB.GetUserByApiKey(cfg.ctx, key[1])
+		if err != nil {
+			log.Print(err)
+			NotFoundHandler(w)
+			return
+		}
+		handler(w, r, user)
+	}
 }
