@@ -4,9 +4,24 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/odin-sofware/nyusu/internal/database"
 )
+
+func (cfg *APIConfig) GetAllFeeds(w http.ResponseWriter, r *http.Request) {
+	feeds, err := cfg.DB.GetAllFeeds(cfg.ctx)
+	if err != nil {
+		log.Print(err)
+		internalServerErrorHandler(w)
+		return
+	}
+	if len(feeds) < 1 {
+		notFoundHandler(w)
+		return
+	}
+	respondWithJSON(w, http.StatusOK, feeds)
+}
 
 func (cfg *APIConfig) CreateFeed(w http.ResponseWriter, r *http.Request, user database.User) {
 	var reqFeed *struct {
@@ -28,5 +43,82 @@ func (cfg *APIConfig) CreateFeed(w http.ResponseWriter, r *http.Request, user da
 		internalServerErrorHandler(w)
 		return
 	}
-	respondWithJSON(w, http.StatusCreated, feed)
+	feedFollow, err := cfg.DB.CreateFeedFollows(cfg.ctx, database.CreateFeedFollowsParams{
+		UserID: user.ID,
+		FeedID: feed.ID,
+	})
+	if err != nil {
+		log.Print(err)
+		internalServerErrorHandler(w)
+		return
+	}
+	res := struct {
+		Feed       database.Feed       `json:"feed"`
+		FeedFollow database.FeedFollow `json:"feed_follow"`
+	}{
+		Feed:       feed,
+		FeedFollow: feedFollow,
+	}
+	respondWithJSON(w, http.StatusCreated, res)
+}
+
+func (cfg *APIConfig) GetFeedFollowsFromUser(w http.ResponseWriter, r *http.Request, user database.User) {
+	feeds, err := cfg.DB.GetFeedFollowsFromUser(cfg.ctx, user.ID)
+	if err != nil {
+		log.Print(err)
+		internalServerErrorHandler(w)
+		return
+	}
+	if len(feeds) < 1 {
+		notFoundHandler(w)
+		return
+	}
+	respondWithJSON(w, http.StatusOK, feeds)
+}
+
+func (cfg *APIConfig) CreateFeedFollows(w http.ResponseWriter, r *http.Request, user database.User) {
+	var reqFeedFollow *struct {
+		FeedId int64 `json:"feed_id,omitempty"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&reqFeedFollow)
+	if err != nil {
+		badRequestHandler(w)
+		return
+	}
+	_, err = cfg.DB.GetFeedFollows(cfg.ctx, database.GetFeedFollowsParams{
+		UserID: user.ID,
+		FeedID: reqFeedFollow.FeedId,
+	})
+	if err == nil {
+		internalServerErrorHandler(w)
+		return
+	}
+	feedFollow, err := cfg.DB.CreateFeedFollows(cfg.ctx, database.CreateFeedFollowsParams{
+		UserID: user.ID,
+		FeedID: reqFeedFollow.FeedId,
+	})
+	if err != nil {
+		log.Print(err)
+		internalServerErrorHandler(w)
+		return
+	}
+	respondWithJSON(w, http.StatusCreated, feedFollow)
+}
+
+func (cfg *APIConfig) DeleteFeedFollows(w http.ResponseWriter, r *http.Request) {
+	feedFollowId := r.PathValue("feedFollowId")
+	id, err := strconv.Atoi(feedFollowId)
+	if err != nil {
+		log.Print(err)
+		badRequestHandler(w)
+		return
+	}
+	err = cfg.DB.DeleteFeedFollows(cfg.ctx, int64(id))
+	if err != nil {
+		log.Print(err)
+		internalServerErrorHandler(w)
+		return
+	}
+
+	respondOk(w)
 }

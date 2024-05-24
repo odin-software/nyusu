@@ -17,6 +17,15 @@ type Feed struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+type FeedFollow struct {
+	ID        int64       `json:"id"`
+	UserID    int64       `json:"user_id"`
+	FeedID    int64       `json:"feed_id"`
+	CreatedAt time.Time   `json:"created_at"`
+	UpdatedAt time.Time   `json:"updated_at"`
+	Foreign   interface{} `json:"foreign"`
+}
+
 type User struct {
 	ID        int64     `json:"id"`
 	Name      string    `json:"name"`

@@ -29,6 +29,10 @@ func unathorizedHandler(w http.ResponseWriter) {
 	w.Write([]byte("401 Unauthorized"))
 }
 
+func respondOk(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusOK)
+}
+
 func respondWithJSON(w http.ResponseWriter, status int, payload interface{}) {
 	data, err := json.Marshal(payload)
 	if err != nil {

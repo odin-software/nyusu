@@ -18,7 +18,12 @@ func main() {
 	mux.HandleFunc("GET /v1/users", cfg.MiddlewareAuth(cfg.GetAuthUser))
 	mux.HandleFunc("POST /v1/users", cfg.CreateUser)
 
+	mux.HandleFunc("GET /v1/feeds", cfg.GetAllFeeds)
 	mux.HandleFunc("POST /v1/feeds", cfg.MiddlewareAuth(cfg.CreateFeed))
+
+	mux.HandleFunc("GET /v1/feed_follows", cfg.MiddlewareAuth(cfg.GetFeedFollowsFromUser))
+	mux.HandleFunc("POST /v1/feed_follows", cfg.MiddlewareAuth(cfg.CreateFeedFollows))
+	mux.HandleFunc("DELETE /v1/feed_follows/{feedFollowId}", cfg.DeleteFeedFollows)
 
 	log.Printf("server is listening at %s", cfg.Env.Port)
 	log.Fatal(http.ListenAndServe(cfg.Env.Port, mux))

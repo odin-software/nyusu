@@ -34,3 +34,127 @@ func (q *Queries) CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, e
 	)
 	return i, err
 }
+
+const createFeedFollows = `-- name: CreateFeedFollows :one
+INSERT INTO feed_follows (user_id, feed_id)
+VALUES (?, ?) 
+RETURNING id, user_id, feed_id, created_at, updated_at, "foreign"
+`
+
+type CreateFeedFollowsParams struct {
+	UserID int64 `json:"user_id"`
+	FeedID int64 `json:"feed_id"`
+}
+
+func (q *Queries) CreateFeedFollows(ctx context.Context, arg CreateFeedFollowsParams) (FeedFollow, error) {
+	row := q.db.QueryRowContext(ctx, createFeedFollows, arg.UserID, arg.FeedID)
+	var i FeedFollow
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.FeedID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Foreign,
+	)
+	return i, err
+}
+
+const deleteFeedFollows = `-- name: DeleteFeedFollows :exec
+DELETE FROM feed_follows
+WHERE id = ?
+`
+
+func (q *Queries) DeleteFeedFollows(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, deleteFeedFollows, id)
+	return err
+}
+
+const getAllFeeds = `-- name: GetAllFeeds :many
+SELECT id, name, url
+FROM feeds
+`
+
+type GetAllFeedsRow struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+	Url  string `json:"url"`
+}
+
+// FEEDS TABLE
+func (q *Queries) GetAllFeeds(ctx context.Context) ([]GetAllFeedsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getAllFeeds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAllFeedsRow
+	for rows.Next() {
+		var i GetAllFeedsRow
+		if err := rows.Scan(&i.ID, &i.Name, &i.Url); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getFeedFollows = `-- name: GetFeedFollows :one
+SELECT id
+FROM feed_follows
+WHERE feed_id = ? AND user_id = ?
+`
+
+type GetFeedFollowsParams struct {
+	FeedID int64 `json:"feed_id"`
+	UserID int64 `json:"user_id"`
+}
+
+// FEED FOLLOWS TABLE
+func (q *Queries) GetFeedFollows(ctx context.Context, arg GetFeedFollowsParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getFeedFollows, arg.FeedID, arg.UserID)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
+const getFeedFollowsFromUser = `-- name: GetFeedFollowsFromUser :many
+SELECT id, user_id, feed_id
+FROM feed_follows
+WHERE user_id = ?
+`
+
+type GetFeedFollowsFromUserRow struct {
+	ID     int64 `json:"id"`
+	UserID int64 `json:"user_id"`
+	FeedID int64 `json:"feed_id"`
+}
+
+func (q *Queries) GetFeedFollowsFromUser(ctx context.Context, userID int64) ([]GetFeedFollowsFromUserRow, error) {
+	rows, err := q.db.QueryContext(ctx, getFeedFollowsFromUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetFeedFollowsFromUserRow
+	for rows.Next() {
+		var i GetFeedFollowsFromUserRow
+		if err := rows.Scan(&i.ID, &i.UserID, &i.FeedID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
