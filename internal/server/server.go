@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"context"
@@ -25,7 +25,7 @@ type APIConfig struct {
 	Env Environment
 }
 
-type authHandler func(http.ResponseWriter, *http.Request, database.User)
+type AuthHandler func(http.ResponseWriter, *http.Request, database.User)
 
 func NewConfig() APIConfig {
 	err := godotenv.Load()
@@ -52,20 +52,33 @@ func NewConfig() APIConfig {
 	}
 }
 
-func (cfg *APIConfig) middlewareAuth(handler authHandler) http.HandlerFunc {
+func (cfg *APIConfig) MiddlewareAuth(handler AuthHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		header := r.Header.Get("Authorization")
 		key := strings.Split(header, " ")
 		if key[0] != "ApiKey" || len(key) < 2 {
-			UnathorizedHandler(w)
+			unathorizedHandler(w)
 			return
 		}
 		user, err := cfg.DB.GetUserByApiKey(cfg.ctx, key[1])
 		if err != nil {
 			log.Print(err)
-			NotFoundHandler(w)
+			notFoundHandler(w)
 			return
 		}
 		handler(w, r, user)
 	}
+}
+
+func (cfg *APIConfig) Readiness(w http.ResponseWriter, r *http.Request) {
+	payload := struct {
+		status string
+	}{
+		status: "ok",
+	}
+	respondWithJSON(w, http.StatusOK, payload)
+}
+
+func (cfg *APIConfig) Err(w http.ResponseWriter, r *http.Request) {
+	internalServerErrorHandler(w)
 }
