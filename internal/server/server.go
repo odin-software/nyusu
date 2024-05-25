@@ -72,13 +72,18 @@ func (cfg *APIConfig) MiddlewareAuth(handler AuthHandler) http.HandlerFunc {
 
 func (cfg *APIConfig) Readiness(w http.ResponseWriter, r *http.Request) {
 	payload := struct {
-		status string
+		Status string `json:"status"`
 	}{
-		status: "ok",
+		Status: "ok",
 	}
 	respondWithJSON(w, http.StatusOK, payload)
 }
 
 func (cfg *APIConfig) Err(w http.ResponseWriter, r *http.Request) {
 	internalServerErrorHandler(w)
+}
+
+func (cfg *APIConfig) TestXmlRes(w http.ResponseWriter, r *http.Request) {
+	DataFromFeed("https://blog.boot.dev/index.xml")
+	respondOk(w)
 }

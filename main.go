@@ -14,6 +14,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /v1/readiness", cfg.Readiness)
 	mux.HandleFunc("GET /v1/err", cfg.Err)
+	mux.HandleFunc("GET /v1/test", cfg.TestXmlRes)
 
 	mux.HandleFunc("GET /v1/users", cfg.MiddlewareAuth(cfg.GetAuthUser))
 	mux.HandleFunc("POST /v1/users", cfg.CreateUser)

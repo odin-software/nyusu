@@ -3,6 +3,19 @@
 SELECT id, name, url
 FROM feeds;
 
+-- name: GetNextFeedsToFetch :many
+SELECT name, url 
+FROM feeds
+ORDER BY last_fetched_at ASC
+LIMIT ?;
+
+-- name: MarkFeedFetched :exec
+UPDATE feeds
+SET
+	last_fetched_at = unixepoch(),
+	updated_at = unixepoch()
+WHERE id = ?;
+
 -- name: CreateFeed :one
 INSERT INTO feeds (name, url, user_id)
 VALUES (?, ?, ?)

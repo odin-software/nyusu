@@ -5,31 +5,32 @@
 package database
 
 import (
-	"time"
+	"database/sql"
 )
 
 type Feed struct {
-	ID        int64     `json:"id"`
-	Name      string    `json:"name"`
-	Url       string    `json:"url"`
-	UserID    int64     `json:"user_id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID            int64         `json:"id"`
+	Name          string        `json:"name"`
+	Url           string        `json:"url"`
+	UserID        int64         `json:"user_id"`
+	CreatedAt     int64         `json:"created_at"`
+	UpdatedAt     int64         `json:"updated_at"`
+	LastFetchedAt sql.NullInt64 `json:"last_fetched_at"`
 }
 
 type FeedFollow struct {
 	ID        int64       `json:"id"`
 	UserID    int64       `json:"user_id"`
 	FeedID    int64       `json:"feed_id"`
-	CreatedAt time.Time   `json:"created_at"`
-	UpdatedAt time.Time   `json:"updated_at"`
+	CreatedAt int64       `json:"created_at"`
+	UpdatedAt int64       `json:"updated_at"`
 	Foreign   interface{} `json:"foreign"`
 }
 
 type User struct {
-	ID        int64     `json:"id"`
-	Name      string    `json:"name"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	ApiKey    string    `json:"api_key"`
+	ID        int64  `json:"id"`
+	Name      string `json:"name"`
+	CreatedAt int64  `json:"created_at"`
+	UpdatedAt int64  `json:"updated_at"`
+	ApiKey    string `json:"api_key"`
 }

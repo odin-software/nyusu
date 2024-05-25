@@ -4,6 +4,10 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"encoding/xml"
+	"errors"
+	"io"
+	"log"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -43,6 +47,42 @@ func respondWithJSON(w http.ResponseWriter, status int, payload interface{}) {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(status)
 	w.Write(data)
+}
+
+type Rss struct {
+	XMLName xml.Name `xml:"rss"`
+	Text    string   `xml:",chardata"`
+	Version string   `xml:"version,attr"`
+	Channel struct {
+		Text        string `xml:",chardata"`
+		Title       string `xml:"title"`
+		Link        string `xml:"link"`
+		Description string `xml:"description"`
+		Item        []struct {
+			Text        string `xml:",chardata"`
+			Title       string `xml:"title"`
+			Description string `xml:"description"`
+		} `xml:"item"`
+	} `xml:"channel"`
+}
+
+func DataFromFeed(url string) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return errors.New("couldn't fetch the url")
+	}
+	defer resp.Body.Close()
+	var rssFeed *Rss
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Print(err)
+	}
+	err = xml.Unmarshal(data, &rssFeed)
+	if err != nil {
+		log.Print(err)
+	}
+	log.Print(rssFeed.Channel.Title)
+	return nil
 }
 
 func GetNewHash() string {
