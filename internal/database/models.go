@@ -27,6 +27,17 @@ type FeedFollow struct {
 	Foreign   interface{} `json:"foreign"`
 }
 
+type Post struct {
+	ID          int64          `json:"id"`
+	Title       string         `json:"title"`
+	Url         string         `json:"url"`
+	Description sql.NullString `json:"description"`
+	FeedID      int64          `json:"feed_id"`
+	CreatedAt   int64          `json:"created_at"`
+	UpdatedAt   int64          `json:"updated_at"`
+	PublishedAt int64          `json:"published_at"`
+}
+
 type User struct {
 	ID        int64  `json:"id"`
 	Name      string `json:"name"`

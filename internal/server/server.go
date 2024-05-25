@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/odin-sofware/nyusu/internal/database"
@@ -83,7 +85,40 @@ func (cfg *APIConfig) Err(w http.ResponseWriter, r *http.Request) {
 	internalServerErrorHandler(w)
 }
 
-func (cfg *APIConfig) TestXmlRes(w http.ResponseWriter, r *http.Request) {
-	DataFromFeed("https://blog.boot.dev/index.xml")
-	respondOk(w)
+func (cfg *APIConfig) TestXmlRes(limit int) {
+	var wg sync.WaitGroup
+	fs, err := cfg.DB.GetNextFeedsToFetch(cfg.ctx, int64(limit))
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	for _, f := range fs {
+		wg.Add(1)
+		go func(id int64, url string) {
+			defer wg.Done()
+			rss, err := DataFromFeed(url)
+			if err != nil {
+				fmt.Println((err.Error()))
+			}
+			for _, p := range rss.Channel.Items {
+				t, err := time.Parse(time.RFC1123, p.Published)
+				if err != nil {
+					log.Println(err)
+				}
+				_, err = cfg.DB.CreatePost(cfg.ctx, database.CreatePostParams{
+					Title:       p.Title,
+					Url:         p.Url,
+					Description: sql.NullString{String: p.Description, Valid: true},
+					FeedID:      id,
+					PublishedAt: t.Unix(),
+				})
+				if err != nil {
+					continue
+				}
+			}
+			println(rss.Channel.Title)
+		}(f.ID, f.Url)
+	}
+	wg.Wait()
+	log.Println("Done")
 }

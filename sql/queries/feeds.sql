@@ -4,7 +4,7 @@ SELECT id, name, url
 FROM feeds;
 
 -- name: GetNextFeedsToFetch :many
-SELECT name, url 
+SELECT id, name, url 
 FROM feeds
 ORDER BY last_fetched_at ASC
 LIMIT ?;

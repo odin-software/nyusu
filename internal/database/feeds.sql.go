@@ -161,13 +161,14 @@ func (q *Queries) GetFeedFollowsFromUser(ctx context.Context, userID int64) ([]G
 }
 
 const getNextFeedsToFetch = `-- name: GetNextFeedsToFetch :many
-SELECT name, url 
+SELECT id, name, url 
 FROM feeds
 ORDER BY last_fetched_at ASC
 LIMIT ?
 `
 
 type GetNextFeedsToFetchRow struct {
+	ID   int64  `json:"id"`
 	Name string `json:"name"`
 	Url  string `json:"url"`
 }
@@ -181,7 +182,7 @@ func (q *Queries) GetNextFeedsToFetch(ctx context.Context, limit int64) ([]GetNe
 	var items []GetNextFeedsToFetchRow
 	for rows.Next() {
 		var i GetNextFeedsToFetchRow
-		if err := rows.Scan(&i.Name, &i.Url); err != nil {
+		if err := rows.Scan(&i.ID, &i.Name, &i.Url); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

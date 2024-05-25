@@ -58,18 +58,20 @@ type Rss struct {
 		Title       string `xml:"title"`
 		Link        string `xml:"link"`
 		Description string `xml:"description"`
-		Item        []struct {
+		Items       []struct {
 			Text        string `xml:",chardata"`
 			Title       string `xml:"title"`
 			Description string `xml:"description"`
+			Published   string `xml:"pubDate"`
+			Url         string `xml:"link"`
 		} `xml:"item"`
 	} `xml:"channel"`
 }
 
-func DataFromFeed(url string) error {
+func DataFromFeed(url string) (Rss, error) {
 	resp, err := http.Get(url)
 	if err != nil {
-		return errors.New("couldn't fetch the url")
+		return Rss{}, errors.New("couldn't fetch the url")
 	}
 	defer resp.Body.Close()
 	var rssFeed *Rss
@@ -81,8 +83,7 @@ func DataFromFeed(url string) error {
 	if err != nil {
 		log.Print(err)
 	}
-	log.Print(rssFeed.Channel.Title)
-	return nil
+	return *rssFeed, nil
 }
 
 func GetNewHash() string {
