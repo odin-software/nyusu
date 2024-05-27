@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"log"
+	"math"
 	"net/http"
 	"strconv"
 
@@ -12,7 +13,11 @@ import (
 )
 
 func (cfg *APIConfig) GetAllFeeds(w http.ResponseWriter, r *http.Request) {
-	feeds, err := cfg.DB.GetAllFeeds(cfg.ctx)
+	ps, pn := GetPageSizeNumber(r)
+	feeds, err := cfg.DB.GetAllFeeds(cfg.ctx, database.GetAllFeedsParams{
+		Limit:  ps,
+		Offset: int64(math.Min(float64(pn-1*ps), 0.0)),
+	})
 	if err != nil {
 		log.Print(err)
 		internalServerErrorHandler(w)

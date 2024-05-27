@@ -10,4 +10,5 @@ INNER JOIN feeds f ON ff.feed_id = f.id
 INNER JOIN posts p ON p.feed_id = f.id
 WHERE ff.user_id = ?
 ORDER BY p.published_at DESC
-LIMIT ?;
+LIMIT ?
+OFFSET ?;

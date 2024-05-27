@@ -91,7 +91,14 @@ func (q *Queries) DeleteFeedFollows(ctx context.Context, id int64) error {
 const getAllFeeds = `-- name: GetAllFeeds :many
 SELECT id, name, url
 FROM feeds
+LIMIT ?
+OFFSET ?
 `
+
+type GetAllFeedsParams struct {
+	Limit  int64 `json:"limit"`
+	Offset int64 `json:"offset"`
+}
 
 type GetAllFeedsRow struct {
 	ID   int64  `json:"id"`
@@ -100,8 +107,8 @@ type GetAllFeedsRow struct {
 }
 
 // FEEDS TABLE
-func (q *Queries) GetAllFeeds(ctx context.Context) ([]GetAllFeedsRow, error) {
-	rows, err := q.db.QueryContext(ctx, getAllFeeds)
+func (q *Queries) GetAllFeeds(ctx context.Context, arg GetAllFeedsParams) ([]GetAllFeedsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getAllFeeds, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}

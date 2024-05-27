@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -17,9 +18,10 @@ import (
 )
 
 type Environment struct {
-	DBUrl  string
-	Engine string
-	Port   string
+	DBUrl    string
+	Engine   string
+	Port     string
+	Scrapper int
 }
 
 type APIConfig struct {
@@ -35,10 +37,15 @@ func NewConfig() APIConfig {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
+	scrapper, err := strconv.Atoi(os.Getenv("SCRAPPER_TICK"))
+	if err != nil {
+		scrapper = 20
+	}
 	env := Environment{
-		DBUrl:  os.Getenv("DB_URL"),
-		Engine: os.Getenv("DB_ENGINE"),
-		Port:   fmt.Sprintf(":%s", os.Getenv("PORT")),
+		DBUrl:    os.Getenv("DB_URL"),
+		Engine:   os.Getenv("DB_ENGINE"),
+		Scrapper: scrapper,
+		Port:     fmt.Sprintf(":%s", os.Getenv("PORT")),
 	}
 
 	ctx := context.Background()

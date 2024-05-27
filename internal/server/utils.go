@@ -45,6 +45,21 @@ func respondWithJSON(w http.ResponseWriter, status int, payload interface{}) {
 	w.Write(data)
 }
 
+func GetPageSizeNumber(r *http.Request) (pageSize int64, pageNumber int64) {
+	q := r.URL.Query()
+	ps := q.Get("pageSize")
+	pn := q.Get("pageNumber")
+	pageSize, err := strconv.ParseInt(ps, 10, 64)
+	if err != nil {
+		pageSize = 10
+	}
+	pageNumber, err = strconv.ParseInt(pn, 10, 64)
+	if err != nil {
+		pageNumber = 0
+	}
+	return
+}
+
 func GetNewHash() string {
 	r := strconv.FormatFloat(rand.Float64(), 'f', -1, 64)
 	h := sha256.New()

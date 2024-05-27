@@ -1,7 +1,9 @@
 -- FEEDS TABLE
 -- name: GetAllFeeds :many
 SELECT id, name, url
-FROM feeds;
+FROM feeds
+LIMIT ?
+OFFSET ?;
 
 -- name: GetNextFeedsToFetch :many
 SELECT id, name, url 

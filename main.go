@@ -11,7 +11,7 @@ import (
 
 func main() {
 	cfg := server.NewConfig()
-	ticker := time.NewTicker(20 * time.Second)
+	ticker := time.NewTicker(time.Duration(cfg.Env.Scrapper) * time.Second)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /v1/readiness", cfg.Readiness)

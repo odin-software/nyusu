@@ -55,11 +55,13 @@ INNER JOIN posts p ON p.feed_id = f.id
 WHERE ff.user_id = ?
 ORDER BY p.published_at DESC
 LIMIT ?
+OFFSET ?
 `
 
 type GetPostsByUserParams struct {
 	UserID int64 `json:"user_id"`
 	Limit  int64 `json:"limit"`
+	Offset int64 `json:"offset"`
 }
 
 type GetPostsByUserRow struct {
@@ -69,7 +71,7 @@ type GetPostsByUserRow struct {
 }
 
 func (q *Queries) GetPostsByUser(ctx context.Context, arg GetPostsByUserParams) ([]GetPostsByUserRow, error) {
-	rows, err := q.db.QueryContext(ctx, getPostsByUser, arg.UserID, arg.Limit)
+	rows, err := q.db.QueryContext(ctx, getPostsByUser, arg.UserID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
