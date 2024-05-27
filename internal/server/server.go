@@ -13,6 +13,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/odin-sofware/nyusu/internal/database"
+	"github.com/odin-sofware/nyusu/internal/rss"
 )
 
 type Environment struct {
@@ -85,7 +86,7 @@ func (cfg *APIConfig) Err(w http.ResponseWriter, r *http.Request) {
 	internalServerErrorHandler(w)
 }
 
-func (cfg *APIConfig) TestXmlRes(limit int) {
+func (cfg *APIConfig) FetchPastFeeds(limit int) {
 	var wg sync.WaitGroup
 	fs, err := cfg.DB.GetNextFeedsToFetch(cfg.ctx, int64(limit))
 	if err != nil {
@@ -96,9 +97,14 @@ func (cfg *APIConfig) TestXmlRes(limit int) {
 		wg.Add(1)
 		go func(id int64, url string) {
 			defer wg.Done()
-			rss, err := DataFromFeed(url)
+			rss, err := rss.DataFromFeed(url)
 			if err != nil {
 				fmt.Println((err.Error()))
+			}
+			err = cfg.DB.MarkFeedFetched(cfg.ctx, id)
+			if err != nil {
+				log.Println(err)
+				return
 			}
 			for _, p := range rss.Channel.Items {
 				t, err := time.Parse(time.RFC1123, p.Published)
@@ -116,7 +122,6 @@ func (cfg *APIConfig) TestXmlRes(limit int) {
 					continue
 				}
 			}
-			println(rss.Channel.Title)
 		}(f.ID, f.Url)
 	}
 	wg.Wait()

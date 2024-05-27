@@ -17,8 +17,8 @@ SET
 WHERE id = ?;
 
 -- name: CreateFeed :one
-INSERT INTO feeds (name, url, user_id)
-VALUES (?, ?, ?)
+INSERT INTO feeds (name, url, description, image_url, image_text, language, user_id)
+VALUES (?, ?, ?, ?, ?, ?, ?)
 RETURNING *;
 
 -- FEED FOLLOWS TABLE

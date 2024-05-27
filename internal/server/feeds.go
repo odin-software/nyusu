@@ -1,12 +1,14 @@
 package server
 
 import (
+	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/odin-sofware/nyusu/internal/database"
+	"github.com/odin-sofware/nyusu/internal/rss"
 )
 
 func (cfg *APIConfig) GetAllFeeds(w http.ResponseWriter, r *http.Request) {
@@ -25,18 +27,27 @@ func (cfg *APIConfig) GetAllFeeds(w http.ResponseWriter, r *http.Request) {
 
 func (cfg *APIConfig) CreateFeed(w http.ResponseWriter, r *http.Request, user database.User) {
 	var reqFeed *struct {
-		Name string `json:"name,omitempty"`
-		Url  string `json:"url,omitempty"`
+		Url string `json:"url,omitempty"`
 	}
 	err := json.NewDecoder(r.Body).Decode(&reqFeed)
 	if err != nil {
 		badRequestHandler(w)
 		return
 	}
+	rss, err := rss.DataFromFeed(reqFeed.Url)
+	if err != nil {
+		log.Print(err)
+		internalServerErrorHandler(w)
+		return
+	}
 	feed, err := cfg.DB.CreateFeed(cfg.ctx, database.CreateFeedParams{
-		Name:   reqFeed.Name,
-		Url:    reqFeed.Url,
-		UserID: user.ID,
+		Url:         reqFeed.Url,
+		Name:        rss.Channel.Title,
+		Description: sql.NullString{String: rss.Channel.Description, Valid: true},
+		ImageUrl:    sql.NullString{String: rss.Channel.Image.Url, Valid: true},
+		ImageText:   sql.NullString{String: rss.Channel.Image.Title, Valid: true},
+		Language:    sql.NullString{String: rss.Channel.Language, Valid: true},
+		UserID:      user.ID,
 	})
 	if err != nil {
 		log.Print(err)
@@ -119,6 +130,5 @@ func (cfg *APIConfig) DeleteFeedFollows(w http.ResponseWriter, r *http.Request) 
 		internalServerErrorHandler(w)
 		return
 	}
-
 	respondOk(w)
 }
