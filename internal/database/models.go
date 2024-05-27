@@ -9,13 +9,17 @@ import (
 )
 
 type Feed struct {
-	ID            int64         `json:"id"`
-	Name          string        `json:"name"`
-	Url           string        `json:"url"`
-	UserID        int64         `json:"user_id"`
-	CreatedAt     int64         `json:"created_at"`
-	UpdatedAt     int64         `json:"updated_at"`
-	LastFetchedAt sql.NullInt64 `json:"last_fetched_at"`
+	ID            int64          `json:"id"`
+	Name          string         `json:"name"`
+	Url           string         `json:"url"`
+	UserID        int64          `json:"user_id"`
+	CreatedAt     int64          `json:"created_at"`
+	UpdatedAt     int64          `json:"updated_at"`
+	LastFetchedAt sql.NullInt64  `json:"last_fetched_at"`
+	Description   sql.NullString `json:"description"`
+	ImageUrl      sql.NullString `json:"image_url"`
+	ImageText     sql.NullString `json:"image_text"`
+	Language      sql.NullString `json:"language"`
 }
 
 type FeedFollow struct {
@@ -36,6 +40,7 @@ type Post struct {
 	CreatedAt   int64          `json:"created_at"`
 	UpdatedAt   int64          `json:"updated_at"`
 	PublishedAt int64          `json:"published_at"`
+	Content     sql.NullString `json:"content"`
 }
 
 type User struct {

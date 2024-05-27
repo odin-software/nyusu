@@ -31,7 +31,7 @@ func main() {
 
 	go func() {
 		for range ticker.C {
-			cfg.TestXmlRes(5)
+			cfg.FetchPastFeeds(5)
 		}
 	}()
 

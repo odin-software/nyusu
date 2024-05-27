@@ -13,7 +13,7 @@ import (
 const createPost = `-- name: CreatePost :one
 INSERT INTO posts (title, url, description, feed_id, published_at)
 VALUES (?, ?, ?, ?, ?)
-RETURNING id, title, url, description, feed_id, created_at, updated_at, published_at
+RETURNING id, title, url, description, feed_id, created_at, updated_at, published_at, content
 `
 
 type CreatePostParams struct {
@@ -42,16 +42,18 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (Post, e
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.PublishedAt,
+		&i.Content,
 	)
 	return i, err
 }
 
 const getPostsByUser = `-- name: GetPostsByUser :many
 SELECT p.title, p.url, p.published_at
-FROM posts p
-INNER JOIN feeds f ON p.feed_id = f.id
-INNER JOIN feed_follows ff ON f.user_id = ? AND ff.feed_id = f.id
-ORDER BY p.published_at
+FROM feed_follows ff
+INNER JOIN feeds f ON ff.feed_id = f.id
+INNER JOIN posts p ON p.feed_id = f.id
+WHERE ff.user_id = ?
+ORDER BY p.published_at DESC
 LIMIT ?
 `
 

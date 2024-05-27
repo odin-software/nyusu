@@ -7,22 +7,35 @@ package database
 
 import (
 	"context"
+	"database/sql"
 )
 
 const createFeed = `-- name: CreateFeed :one
-INSERT INTO feeds (name, url, user_id)
-VALUES (?, ?, ?)
-RETURNING id, name, url, user_id, created_at, updated_at, last_fetched_at
+INSERT INTO feeds (name, url, description, image_url, image_text, language, user_id)
+VALUES (?, ?, ?, ?, ?, ?, ?)
+RETURNING id, name, url, user_id, created_at, updated_at, last_fetched_at, description, image_url, image_text, language
 `
 
 type CreateFeedParams struct {
-	Name   string `json:"name"`
-	Url    string `json:"url"`
-	UserID int64  `json:"user_id"`
+	Name        string         `json:"name"`
+	Url         string         `json:"url"`
+	Description sql.NullString `json:"description"`
+	ImageUrl    sql.NullString `json:"image_url"`
+	ImageText   sql.NullString `json:"image_text"`
+	Language    sql.NullString `json:"language"`
+	UserID      int64          `json:"user_id"`
 }
 
 func (q *Queries) CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, error) {
-	row := q.db.QueryRowContext(ctx, createFeed, arg.Name, arg.Url, arg.UserID)
+	row := q.db.QueryRowContext(ctx, createFeed,
+		arg.Name,
+		arg.Url,
+		arg.Description,
+		arg.ImageUrl,
+		arg.ImageText,
+		arg.Language,
+		arg.UserID,
+	)
 	var i Feed
 	err := row.Scan(
 		&i.ID,
@@ -32,6 +45,10 @@ func (q *Queries) CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, e
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.LastFetchedAt,
+		&i.Description,
+		&i.ImageUrl,
+		&i.ImageText,
+		&i.Language,
 	)
 	return i, err
 }
