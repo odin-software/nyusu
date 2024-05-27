@@ -27,6 +27,7 @@ func main() {
 	mux.HandleFunc("POST /v1/feed_follows", cfg.MiddlewareAuth(cfg.CreateFeedFollows))
 	mux.HandleFunc("DELETE /v1/feed_follows/{feedFollowId}", cfg.DeleteFeedFollows)
 
+	mux.HandleFunc("GET /v1/posts/{feedId}", cfg.MiddlewareAuth(cfg.GetPostByUsersAndFeed))
 	mux.HandleFunc("GET /v1/posts", cfg.MiddlewareAuth(cfg.GetPostByUsers))
 
 	go func() {

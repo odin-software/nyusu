@@ -3,6 +3,7 @@ package server
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"log"
 	"math"
 	"net/http"
@@ -136,4 +137,14 @@ func (cfg *APIConfig) DeleteFeedFollows(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	respondOk(w)
+}
+
+func GetFeedId(r *http.Request) (int64, error) {
+	q := r.URL.Query()
+	fi := q.Get("feedId")
+	feedId, err := strconv.ParseInt(fi, 10, 64)
+	if err != nil {
+		return 0, errors.New("no feedId provided")
+	}
+	return feedId, nil
 }

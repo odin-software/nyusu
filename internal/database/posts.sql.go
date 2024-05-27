@@ -92,3 +92,55 @@ func (q *Queries) GetPostsByUser(ctx context.Context, arg GetPostsByUserParams) 
 	}
 	return items, nil
 }
+
+const getPostsByUserAndFeed = `-- name: GetPostsByUserAndFeed :many
+SELECT p.title, p.url, p.published_at
+FROM feed_follows ff
+INNER JOIN feeds f ON ff.feed_id = f.id
+INNER JOIN posts p ON p.feed_id = f.id
+WHERE ff.user_id = ? AND f.id = ?
+ORDER BY p.published_at DESC
+LIMIT ?
+OFFSET ?
+`
+
+type GetPostsByUserAndFeedParams struct {
+	UserID int64 `json:"user_id"`
+	ID     int64 `json:"id"`
+	Limit  int64 `json:"limit"`
+	Offset int64 `json:"offset"`
+}
+
+type GetPostsByUserAndFeedRow struct {
+	Title       string `json:"title"`
+	Url         string `json:"url"`
+	PublishedAt int64  `json:"published_at"`
+}
+
+func (q *Queries) GetPostsByUserAndFeed(ctx context.Context, arg GetPostsByUserAndFeedParams) ([]GetPostsByUserAndFeedRow, error) {
+	rows, err := q.db.QueryContext(ctx, getPostsByUserAndFeed,
+		arg.UserID,
+		arg.ID,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetPostsByUserAndFeedRow
+	for rows.Next() {
+		var i GetPostsByUserAndFeedRow
+		if err := rows.Scan(&i.Title, &i.Url, &i.PublishedAt); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
