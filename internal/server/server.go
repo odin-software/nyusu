@@ -134,3 +134,31 @@ func (cfg *APIConfig) FetchPastFeeds(limit int) {
 	wg.Wait()
 	log.Println("Done")
 }
+
+func (cfg *APIConfig) FetchOneFeedSync(feedId int64, url string) {
+	rss, err := rss.DataFromFeed(url)
+	if err != nil {
+		fmt.Println((err.Error()))
+	}
+	err = cfg.DB.MarkFeedFetched(cfg.ctx, feedId)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	for _, p := range rss.Channel.Items {
+		t, err := time.Parse(time.RFC1123, p.Published)
+		if err != nil {
+			log.Println(err)
+		}
+		_, err = cfg.DB.CreatePost(cfg.ctx, database.CreatePostParams{
+			Title:       p.Title,
+			Url:         p.Url,
+			Description: sql.NullString{String: p.Description, Valid: true},
+			FeedID:      feedId,
+			PublishedAt: t.Unix(),
+		})
+		if err != nil {
+			continue
+		}
+	}
+}

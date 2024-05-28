@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"math"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -45,7 +46,7 @@ func respondWithJSON(w http.ResponseWriter, status int, payload interface{}) {
 	w.Write(data)
 }
 
-func GetPageSizeNumber(r *http.Request) (pageSize int64, pageNumber int64) {
+func GetPageSizeNumber(r *http.Request) (limit int64, offset int64) {
 	q := r.URL.Query()
 	ps := q.Get("pageSize")
 	pn := q.Get("pageNumber")
@@ -53,10 +54,12 @@ func GetPageSizeNumber(r *http.Request) (pageSize int64, pageNumber int64) {
 	if err != nil {
 		pageSize = 10
 	}
-	pageNumber, err = strconv.ParseInt(pn, 10, 64)
+	pageNumber, err := strconv.ParseInt(pn, 10, 64)
 	if err != nil {
 		pageNumber = 0
 	}
+	limit = pageSize
+	offset = int64(math.Max(float64((pageNumber-1)*limit), 0.0))
 	return
 }
 

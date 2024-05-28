@@ -76,6 +76,7 @@ func (cfg *APIConfig) CreateFeed(w http.ResponseWriter, r *http.Request, user da
 		Feed:       feed,
 		FeedFollow: feedFollow,
 	}
+	cfg.FetchOneFeedSync(feed.ID, feed.Url)
 	respondWithJSON(w, http.StatusCreated, res)
 }
 
