@@ -1,9 +1,14 @@
 -- name: CreateUser :one
-INSERT INTO users (name, api_key)
-VALUES (?, ?)
+INSERT INTO users (name, email, password)
+VALUES ("", ?, ?)
 RETURNING *;
 
--- name: GetUserByApiKey :one
-SELECT id, name, created_at, updated_at, api_key
+-- name: GetUserById :one
+SELECT * 
 FROM users
-WHERE api_key = ?;
+WHERE id = ?;
+
+-- name: GetUserByEmail :one
+SELECT * 
+FROM users
+WHERE email = ?;

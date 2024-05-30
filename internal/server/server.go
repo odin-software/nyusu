@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -18,10 +17,11 @@ import (
 )
 
 type Environment struct {
-	DBUrl    string
-	Engine   string
-	Port     string
-	Scrapper int
+	DBUrl     string
+	Engine    string
+	Port      string
+	Scrapper  int
+	SecretKey []byte
 }
 
 type APIConfig struct {
@@ -42,10 +42,11 @@ func NewConfig() APIConfig {
 		scrapper = 20
 	}
 	env := Environment{
-		DBUrl:    os.Getenv("DB_URL"),
-		Engine:   os.Getenv("DB_ENGINE"),
-		Scrapper: scrapper,
-		Port:     fmt.Sprintf(":%s", os.Getenv("PORT")),
+		DBUrl:     os.Getenv("DB_URL"),
+		Engine:    os.Getenv("DB_ENGINE"),
+		Port:      fmt.Sprintf(":%s", os.Getenv("PORT")),
+		SecretKey: []byte(os.Getenv("JWT_KEY")),
+		Scrapper:  scrapper,
 	}
 
 	ctx := context.Background()
@@ -59,24 +60,6 @@ func NewConfig() APIConfig {
 		ctx: ctx,
 		DB:  dbQueries,
 		Env: env,
-	}
-}
-
-func (cfg *APIConfig) MiddlewareAuth(handler AuthHandler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		header := r.Header.Get("Authorization")
-		key := strings.Split(header, " ")
-		if key[0] != "ApiKey" || len(key) < 2 {
-			unathorizedHandler(w)
-			return
-		}
-		user, err := cfg.DB.GetUserByApiKey(cfg.ctx, key[1])
-		if err != nil {
-			log.Print(err)
-			notFoundHandler(w)
-			return
-		}
-		handler(w, r, user)
 	}
 }
 

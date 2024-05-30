@@ -10,44 +10,66 @@ import (
 )
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (name, api_key)
-VALUES (?, ?)
-RETURNING id, name, created_at, updated_at, api_key
+INSERT INTO users (name, email, password)
+VALUES ("", ?, ?)
+RETURNING id, name, email, password, created_at, updated_at
 `
 
 type CreateUserParams struct {
-	Name   string `json:"name"`
-	ApiKey string `json:"api_key"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, createUser, arg.Name, arg.ApiKey)
+	row := q.db.QueryRowContext(ctx, createUser, arg.Email, arg.Password)
 	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.Email,
+		&i.Password,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.ApiKey,
 	)
 	return i, err
 }
 
-const getUserByApiKey = `-- name: GetUserByApiKey :one
-SELECT id, name, created_at, updated_at, api_key
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT id, name, email, password, created_at, updated_at 
 FROM users
-WHERE api_key = ?
+WHERE email = ?
 `
 
-func (q *Queries) GetUserByApiKey(ctx context.Context, apiKey string) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUserByApiKey, apiKey)
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
 	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.Email,
+		&i.Password,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.ApiKey,
+	)
+	return i, err
+}
+
+const getUserById = `-- name: GetUserById :one
+SELECT id, name, email, password, created_at, updated_at 
+FROM users
+WHERE id = ?
+`
+
+func (q *Queries) GetUserById(ctx context.Context, id int64) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserById, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.Password,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
