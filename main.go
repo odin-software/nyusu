@@ -33,6 +33,7 @@ func main() {
 	mux.HandleFunc("GET /v1/posts/bookmarks", cfg.MiddlewareAuth(cfg.GetBookmarkedPosts))
 	mux.HandleFunc("GET /v1/posts/{feedId}", cfg.MiddlewareAuth(cfg.GetPostByUsersAndFeed))
 	mux.HandleFunc("GET /v1/posts", cfg.MiddlewareAuth(cfg.GetPostByUsers))
+	server.Basic()
 
 	go func() {
 		for range ticker.C {
