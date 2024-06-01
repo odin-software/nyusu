@@ -17,8 +17,9 @@ func main() {
 	mux.HandleFunc("GET /v1/readiness", cfg.Readiness)
 	mux.HandleFunc("GET /v1/err", cfg.Err)
 
+	mux.HandleFunc("POST /v1/users/login", cfg.LoginUser)
+	mux.HandleFunc("POST /v1/users/register", cfg.RegisterUser)
 	mux.HandleFunc("GET /v1/users", cfg.MiddlewareAuth(cfg.GetAuthUser))
-	mux.HandleFunc("POST /v1/users", cfg.CreateUser)
 
 	mux.HandleFunc("GET /v1/feeds", cfg.GetAllFeeds)
 	mux.HandleFunc("POST /v1/feeds", cfg.MiddlewareAuth(cfg.CreateFeed))
@@ -32,6 +33,7 @@ func main() {
 	mux.HandleFunc("GET /v1/posts/bookmarks", cfg.MiddlewareAuth(cfg.GetBookmarkedPosts))
 	mux.HandleFunc("GET /v1/posts/{feedId}", cfg.MiddlewareAuth(cfg.GetPostByUsersAndFeed))
 	mux.HandleFunc("GET /v1/posts", cfg.MiddlewareAuth(cfg.GetPostByUsers))
+	server.Basic()
 
 	go func() {
 		for range ticker.C {
