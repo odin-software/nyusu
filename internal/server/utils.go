@@ -1,11 +1,8 @@
 package server
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"math"
-	"math/rand"
 	"net/http"
 	"strconv"
 )
@@ -61,12 +58,4 @@ func GetPageSizeNumber(r *http.Request) (limit int64, offset int64) {
 	limit = pageSize
 	offset = int64(math.Max(float64((pageNumber-1)*limit), 0.0))
 	return
-}
-
-func GetNewHash() string {
-	r := strconv.FormatFloat(rand.Float64(), 'f', -1, 64)
-	h := sha256.New()
-	h.Write([]byte(r))
-
-	return hex.EncodeToString(h.Sum((nil)))
 }
