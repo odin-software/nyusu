@@ -7,6 +7,7 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/odin-sofware/nyusu/internal/server"
+	"github.com/rs/cors"
 )
 
 func main() {
@@ -33,7 +34,9 @@ func main() {
 	mux.HandleFunc("GET /v1/posts/bookmarks", cfg.MiddlewareAuth(cfg.GetBookmarkedPosts))
 	mux.HandleFunc("GET /v1/posts/{feedId}", cfg.MiddlewareAuth(cfg.GetPostByUsersAndFeed))
 	mux.HandleFunc("GET /v1/posts", cfg.MiddlewareAuth(cfg.GetPostByUsers))
-	server.Basic()
+	// server.Basic()
+
+	handler := cors.Default().Handler(mux)
 
 	go func() {
 		for range ticker.C {
@@ -42,5 +45,5 @@ func main() {
 	}()
 
 	log.Printf("server is listening at %s", cfg.Env.Port)
-	log.Fatal(http.ListenAndServe(cfg.Env.Port, mux))
+	log.Fatal(http.ListenAndServe(cfg.Env.Port, handler))
 }

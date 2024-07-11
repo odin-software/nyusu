@@ -22,6 +22,7 @@ type Claims struct {
 }
 
 func (cfg *APIConfig) LoginUser(w http.ResponseWriter, r *http.Request) {
+	// w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
 	var reqUser *struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -77,6 +78,9 @@ func (cfg *APIConfig) RegisterUser(w http.ResponseWriter, r *http.Request) {
 
 func (cfg *APIConfig) MiddlewareAuth(handler AuthHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// TODO: add cors from env variable.
+		log.Println("HEY")
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
 		header := r.Header.Get("Authorization")
 		key := strings.Split(header, " ")
 		if key[0] != "Bearer" || len(key) < 2 {
