@@ -22,7 +22,7 @@ type Claims struct {
 }
 
 func (cfg *APIConfig) LoginUser(w http.ResponseWriter, r *http.Request) {
-	// w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	var reqUser *struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -78,9 +78,6 @@ func (cfg *APIConfig) RegisterUser(w http.ResponseWriter, r *http.Request) {
 
 func (cfg *APIConfig) MiddlewareAuth(handler AuthHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// TODO: add cors from env variable.
-		log.Println("HEY")
-		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
 		header := r.Header.Get("Authorization")
 		key := strings.Split(header, " ")
 		if key[0] != "Bearer" || len(key) < 2 {
@@ -110,6 +107,22 @@ func (cfg *APIConfig) MiddlewareAuth(handler AuthHandler) http.HandlerFunc {
 			return
 		}
 		handler(w, r, user)
+	}
+}
+
+func CORS(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Access-Control-Allow-Origin", "*")
+		w.Header().Add("Access-Control-Allow-Credentials", "true")
+		w.Header().Add("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		w.Header().Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+
+		if r.Method == "OPTIONS" {
+			http.Error(w, "No Content", http.StatusNoContent)
+			return
+		}
+
+		next(w, r)
 	}
 }
 

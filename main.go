@@ -7,7 +7,6 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/odin-sofware/nyusu/internal/server"
-	"github.com/rs/cors"
 )
 
 func main() {
@@ -15,12 +14,23 @@ func main() {
 	ticker := time.NewTicker(time.Duration(cfg.Env.Scrapper) * time.Second)
 
 	mux := http.NewServeMux()
+	// mx := http.NewServeMux()
 	mux.HandleFunc("GET /v1/readiness", cfg.Readiness)
 	mux.HandleFunc("GET /v1/err", cfg.Err)
 
+	// mux.HandleFunc("OPTIONS /v1/users/login", func(w http.ResponseWriter, r *http.Request) {
+	// 	w.Header().Add("Access-Control-Allow-Origin", "*")
+	// 	w.Header().Add("Access-Control-Allow-Methods", "*")
+	// })
+	// mux.HandleFunc("OPTIONS /v1/users", func(w http.ResponseWriter, r *http.Request) {
+	// 	w.Header().Add("Access-Control-Allow-Origin", "*")
+	// 	w.Header().Add("Access-Control-Allow-Methods", "*")
+	// 	w.Header().Add("Access-Control-Allow-Headers", "*")
+	// })
+
 	mux.HandleFunc("POST /v1/users/login", cfg.LoginUser)
 	mux.HandleFunc("POST /v1/users/register", cfg.RegisterUser)
-	mux.HandleFunc("GET /v1/users", cfg.MiddlewareAuth(cfg.GetAuthUser))
+	mux.HandleFunc("/v1/users", server.CORS(cfg.MiddlewareAuth(cfg.GetAuthUser)))
 
 	mux.HandleFunc("GET /v1/feeds", cfg.GetAllFeeds)
 	mux.HandleFunc("POST /v1/feeds", cfg.MiddlewareAuth(cfg.CreateFeed))
@@ -36,8 +46,6 @@ func main() {
 	mux.HandleFunc("GET /v1/posts", cfg.MiddlewareAuth(cfg.GetPostByUsers))
 	// server.Basic()
 
-	handler := cors.Default().Handler(mux)
-
 	go func() {
 		for range ticker.C {
 			cfg.FetchPastFeeds(5)
@@ -45,5 +53,7 @@ func main() {
 	}()
 
 	log.Printf("server is listening at %s", cfg.Env.Port)
-	log.Fatal(http.ListenAndServe(cfg.Env.Port, handler))
+	// log.Fatal(http.ListenAndServe(":4029", handler2))
+	// log.Fatal(http.ListenAndServe(cfg.Env.Port, mx))
+	log.Fatal(http.ListenAndServe(cfg.Env.Port, mux))
 }

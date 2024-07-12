@@ -45,9 +45,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (!res.ok) {
       return false;
     }
+    console.log(res);
     const resData = await res.json();
     console.log(resData);
-    const userResponse = await axios("http://localhost:8888/v1/users", {
+    const userResponse = await fetch("http://localhost:8888/v1/users", {
       method: "GET",
       headers: {
         "Content-type": "application/json",
@@ -57,7 +58,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (userResponse.status !== 200) {
       return false;
     }
-    const userData = (await resData.json()) as User;
+    console.log(userResponse);
+    const userData = (await userResponse.json()) as User;
+    console.log(userData);
     setUser(userData);
     navigate("/");
     return true;
