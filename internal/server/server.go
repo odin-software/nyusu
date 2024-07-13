@@ -9,7 +9,6 @@ import (
 	"os"
 	"strconv"
 	"sync"
-	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/odin-sofware/nyusu/internal/database"
@@ -97,7 +96,7 @@ func (cfg *APIConfig) FetchPastFeeds(limit int) {
 				return
 			}
 			for _, p := range rss.Channel.Items {
-				t, err := time.Parse(time.RFC1123, p.Published)
+				t, err := ParseTime(p.Published)
 				if err != nil {
 					log.Println(err)
 				}
@@ -129,7 +128,7 @@ func (cfg *APIConfig) FetchOneFeedSync(feedId int64, url string) {
 		return
 	}
 	for _, p := range rss.Channel.Items {
-		t, err := time.Parse(time.RFC1123, p.Published)
+		t, err := ParseTime(p.Published)
 		if err != nil {
 			log.Println(err)
 		}

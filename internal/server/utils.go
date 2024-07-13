@@ -5,6 +5,7 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 func internalServerErrorHandler(w http.ResponseWriter) {
@@ -58,4 +59,13 @@ func GetPageSizeNumber(r *http.Request) (limit int64, offset int64) {
 	limit = pageSize
 	offset = int64(math.Max(float64((pageNumber-1)*limit), 0.0))
 	return
+}
+
+func ParseTime(value string) (time.Time, error) {
+	t, err := time.Parse(time.RFC1123, value)
+	if err != nil {
+		k, err := time.Parse("January _2, 2006", value)
+		return k, err
+	}
+	return t, err
 }
