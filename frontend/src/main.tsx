@@ -22,7 +22,7 @@ function Root() {
       element: <Login />,
     },
     {
-      path: "/secret",
+      path: "/posts",
       element: (
         <ProtectedRoute>
           <Secret />

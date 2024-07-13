@@ -1,7 +1,7 @@
 import { createContext, useContext, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLocalStorage } from "./useLocalStorage";
-import axios from "axios";
+import axios from "../utils/requests";
 
 type User = {
   id: number;
@@ -35,39 +35,36 @@ const AuthContext = createContext<AuthValue>(initialContext);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useLocalStorage<User | null>("user", null);
+  const [_, setToken] = useLocalStorage<string | null>("token", null);
   const navigate = useNavigate();
 
   const login = async (data: LoginData): Promise<boolean> => {
-    const res = await fetch("http://localhost:8888/v1/users/login", {
+    const res = await axios("v1/users/login", {
       method: "POST",
-      body: JSON.stringify(data),
+      data,
     });
-    if (!res.ok) {
+    if (!res.data) {
       return false;
     }
-    console.log(res);
-    const resData = await res.json();
-    console.log(resData);
-    const userResponse = await fetch("http://localhost:8888/v1/users", {
+    setToken(res.data.token);
+    const userResponse = await axios("v1/users", {
       method: "GET",
       headers: {
         "Content-type": "application/json",
-        Authorization: `Bearer ${resData.token}`,
+        Authorization: `Bearer ${res.data.token}`,
       },
     });
     if (userResponse.status !== 200) {
       return false;
     }
-    console.log(userResponse);
-    const userData = (await userResponse.json()) as User;
-    console.log(userData);
-    setUser(userData);
+    setUser(userResponse.data);
     navigate("/");
     return true;
   };
 
   const logout = () => {
     setUser(null);
+    setToken(null);
     navigate("/login", { replace: true });
   };
 

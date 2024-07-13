@@ -1,7 +1,18 @@
+import { useEffect } from "react";
+import axios from "../utils/requests";
 import { useAuth } from "../hooks/useAuth";
 
 export const Secret = () => {
   const { logout } = useAuth();
+
+  useEffect(() => {
+    const getFeed = async () => {
+      const res = await axios.get("v1/posts");
+      console.log(res);
+    };
+
+    getFeed();
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -9,7 +20,6 @@ export const Secret = () => {
 
   return (
     <div>
-      <h1>This is a Secret page</h1>
       <button onClick={handleLogout}>Logout</button>
     </div>
   );

@@ -127,7 +127,7 @@ func CORS(next http.HandlerFunc) http.HandlerFunc {
 }
 
 func generateJWT(key string, id int64) (string, error) {
-	expirationTime := time.Now().Add(1 * time.Hour)
+	expirationTime := time.Now().Add(48 * time.Hour)
 	claims := &Claims{
 		Id: id,
 		RegisteredClaims: jwt.RegisteredClaims{

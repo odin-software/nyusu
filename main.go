@@ -14,37 +14,25 @@ func main() {
 	ticker := time.NewTicker(time.Duration(cfg.Env.Scrapper) * time.Second)
 
 	mux := http.NewServeMux()
-	// mx := http.NewServeMux()
 	mux.HandleFunc("GET /v1/readiness", cfg.Readiness)
 	mux.HandleFunc("GET /v1/err", cfg.Err)
 
-	// mux.HandleFunc("OPTIONS /v1/users/login", func(w http.ResponseWriter, r *http.Request) {
-	// 	w.Header().Add("Access-Control-Allow-Origin", "*")
-	// 	w.Header().Add("Access-Control-Allow-Methods", "*")
-	// })
-	// mux.HandleFunc("OPTIONS /v1/users", func(w http.ResponseWriter, r *http.Request) {
-	// 	w.Header().Add("Access-Control-Allow-Origin", "*")
-	// 	w.Header().Add("Access-Control-Allow-Methods", "*")
-	// 	w.Header().Add("Access-Control-Allow-Headers", "*")
-	// })
+	mux.HandleFunc("/v1/users/login", server.CORS(cfg.LoginUser))                 // post
+	mux.HandleFunc("/v1/users/register", server.CORS(cfg.RegisterUser))           // post
+	mux.HandleFunc("/v1/users", server.CORS(cfg.MiddlewareAuth(cfg.GetAuthUser))) // get
 
-	mux.HandleFunc("POST /v1/users/login", cfg.LoginUser)
-	mux.HandleFunc("POST /v1/users/register", cfg.RegisterUser)
-	mux.HandleFunc("/v1/users", server.CORS(cfg.MiddlewareAuth(cfg.GetAuthUser)))
+	mux.HandleFunc("/v1/feeds", server.CORS(cfg.GetAllFeeds))                    // get
+	mux.HandleFunc("/v1/feeds", server.CORS(cfg.MiddlewareAuth(cfg.CreateFeed))) // post
 
-	mux.HandleFunc("GET /v1/feeds", cfg.GetAllFeeds)
-	mux.HandleFunc("POST /v1/feeds", cfg.MiddlewareAuth(cfg.CreateFeed))
+	mux.HandleFunc("GET /v1/feed_follows", cfg.MiddlewareAuth(cfg.GetFeedFollowsFromUser)) // get
+	mux.HandleFunc("POST /v1/feed_follows", cfg.MiddlewareAuth(cfg.CreateFeedFollows))     // post
+	mux.HandleFunc("DELETE /v1/feed_follows/{feedFollowId}", cfg.DeleteFeedFollows)        // delete
 
-	mux.HandleFunc("GET /v1/feed_follows", cfg.MiddlewareAuth(cfg.GetFeedFollowsFromUser))
-	mux.HandleFunc("POST /v1/feed_follows", cfg.MiddlewareAuth(cfg.CreateFeedFollows))
-	mux.HandleFunc("DELETE /v1/feed_follows/{feedFollowId}", cfg.DeleteFeedFollows)
-
-	mux.HandleFunc("DELETE /v1/posts/bookmarks/{postId}", cfg.MiddlewareAuth(cfg.UnbookmarkPost))
-	mux.HandleFunc("POST /v1/posts/bookmarks/{postId}", cfg.MiddlewareAuth(cfg.BookmarkPost))
-	mux.HandleFunc("GET /v1/posts/bookmarks", cfg.MiddlewareAuth(cfg.GetBookmarkedPosts))
-	mux.HandleFunc("GET /v1/posts/{feedId}", cfg.MiddlewareAuth(cfg.GetPostByUsersAndFeed))
-	mux.HandleFunc("GET /v1/posts", cfg.MiddlewareAuth(cfg.GetPostByUsers))
-	// server.Basic()
+	mux.HandleFunc("DELETE /v1/posts/bookmarks/{postId}", cfg.MiddlewareAuth(cfg.UnbookmarkPost)) // delete
+	mux.HandleFunc("POST /v1/posts/bookmarks/{postId}", cfg.MiddlewareAuth(cfg.BookmarkPost))     // post
+	mux.HandleFunc("GET /v1/posts/bookmarks", cfg.MiddlewareAuth(cfg.GetBookmarkedPosts))         // get
+	mux.HandleFunc("GET /v1/posts/{feedId}", cfg.MiddlewareAuth(cfg.GetPostByUsersAndFeed))       // get
+	mux.HandleFunc("/v1/posts", server.CORS(cfg.MiddlewareAuth(cfg.GetPostByUsers)))              // get
 
 	go func() {
 		for range ticker.C {
@@ -53,7 +41,5 @@ func main() {
 	}()
 
 	log.Printf("server is listening at %s", cfg.Env.Port)
-	// log.Fatal(http.ListenAndServe(":4029", handler2))
-	// log.Fatal(http.ListenAndServe(cfg.Env.Port, mx))
 	log.Fatal(http.ListenAndServe(cfg.Env.Port, mux))
 }

@@ -23,9 +23,7 @@ export function Login() {
   };
 
   return (
-    /* "handleSubmit" will validate your inputs before invoking "onSubmit" */
     <form onSubmit={handleSubmit(onSubmit)}>
-      {/* register your input into the hook by invoking the "register" function */}
       <input
         type="email"
         defaultValue=""
@@ -34,12 +32,8 @@ export function Login() {
         })}
       />
       {errors.email && <span>This field is required</span>}
-
-      {/* include validation with required or other standard HTML validation rules */}
       <input type="password" {...register("password", { required: true })} />
-      {/* errors will return when field validation fails  */}
       {errors.password && <span>This field is required</span>}
-
       <input type="submit" />
     </form>
   );
