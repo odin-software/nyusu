@@ -2,11 +2,21 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"math"
 	"net/http"
 	"strconv"
 	"time"
 )
+
+var timeFormats = []string{
+	time.RFC1123,
+	time.RFC1123Z,
+	time.RFC3339,
+	time.RFC822,
+	time.RFC822Z,
+	"January _2, 2006",
+}
 
 func internalServerErrorHandler(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusInternalServerError)
@@ -62,10 +72,11 @@ func GetPageSizeNumber(r *http.Request) (limit int64, offset int64) {
 }
 
 func ParseTime(value string) (time.Time, error) {
-	t, err := time.Parse(time.RFC1123, value)
-	if err != nil {
-		k, err := time.Parse("January _2, 2006", value)
-		return k, err
+	for _, format := range timeFormats {
+		t, err := time.Parse(format, value)
+		if err == nil {
+			return t, err
+		}
 	}
-	return t, err
+	return time.Time{}, errors.New("couldn't parse the time value")
 }

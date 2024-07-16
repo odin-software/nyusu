@@ -137,9 +137,14 @@ func (cfg *APIConfig) FetchOneFeedSync(feedId int64, url string) {
 		if err != nil {
 			log.Println(err)
 		}
+		author := p.Author
+		if author == "" {
+			author = p.Creator
+		}
 		_, err = cfg.DB.CreatePost(cfg.ctx, database.CreatePostParams{
 			Title:       p.Title,
 			Url:         p.Url,
+			Author:      author,
 			Description: sql.NullString{String: p.Description, Valid: true},
 			FeedID:      feedId,
 			PublishedAt: t.Unix(),
