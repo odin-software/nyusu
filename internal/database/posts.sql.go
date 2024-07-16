@@ -26,15 +26,16 @@ func (q *Queries) BookmarkPost(ctx context.Context, arg BookmarkPostParams) erro
 }
 
 const createPost = `-- name: CreatePost :one
-INSERT INTO posts (title, url, description, feed_id, published_at)
-VALUES (?, ?, ?, ?, ?)
-RETURNING id, title, url, description, feed_id, created_at, updated_at, published_at, content
+INSERT INTO posts (title, url, description, author, feed_id, published_at)
+VALUES (?, ?, ?, ?, ?, ?)
+RETURNING id, title, url, description, feed_id, created_at, updated_at, published_at, content, author
 `
 
 type CreatePostParams struct {
 	Title       string         `json:"title"`
 	Url         string         `json:"url"`
 	Description sql.NullString `json:"description"`
+	Author      string         `json:"author"`
 	FeedID      int64          `json:"feed_id"`
 	PublishedAt int64          `json:"published_at"`
 }
@@ -44,6 +45,7 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (Post, e
 		arg.Title,
 		arg.Url,
 		arg.Description,
+		arg.Author,
 		arg.FeedID,
 		arg.PublishedAt,
 	)
@@ -58,6 +60,7 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (Post, e
 		&i.UpdatedAt,
 		&i.PublishedAt,
 		&i.Content,
+		&i.Author,
 	)
 	return i, err
 }
@@ -165,7 +168,7 @@ func (q *Queries) GetBookmarkedPostsByPublished(ctx context.Context, arg GetBook
 }
 
 const getPostsByUser = `-- name: GetPostsByUser :many
-SELECT DISTINCT p.id, f.name, p.title, p.url, p.published_at
+SELECT DISTINCT p.id, f.name, p.title, p.author, p.url, p.published_at
 FROM feed_follows ff
 INNER JOIN feeds f ON ff.feed_id = f.id
 INNER JOIN posts p ON p.feed_id = f.id
@@ -185,6 +188,7 @@ type GetPostsByUserRow struct {
 	ID          int64  `json:"id"`
 	Name        string `json:"name"`
 	Title       string `json:"title"`
+	Author      string `json:"author"`
 	Url         string `json:"url"`
 	PublishedAt int64  `json:"published_at"`
 }
@@ -202,6 +206,7 @@ func (q *Queries) GetPostsByUser(ctx context.Context, arg GetPostsByUserParams) 
 			&i.ID,
 			&i.Name,
 			&i.Title,
+			&i.Author,
 			&i.Url,
 			&i.PublishedAt,
 		); err != nil {

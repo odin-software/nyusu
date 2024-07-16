@@ -1,10 +1,10 @@
 -- name: CreatePost :one
-INSERT INTO posts (title, url, description, feed_id, published_at)
-VALUES (?, ?, ?, ?, ?)
+INSERT INTO posts (title, url, description, author, feed_id, published_at)
+VALUES (?, ?, ?, ?, ?, ?)
 RETURNING *;
 
 -- name: GetPostsByUser :many
-SELECT DISTINCT p.id, f.name, p.title, p.url, p.published_at
+SELECT DISTINCT p.id, f.name, p.title, p.author, p.url, p.published_at
 FROM feed_follows ff
 INNER JOIN feeds f ON ff.feed_id = f.id
 INNER JOIN posts p ON p.feed_id = f.id

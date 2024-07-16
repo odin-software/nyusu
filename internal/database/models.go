@@ -41,6 +41,7 @@ type Post struct {
 	UpdatedAt   int64          `json:"updated_at"`
 	PublishedAt int64          `json:"published_at"`
 	Content     sql.NullString `json:"content"`
+	Author      string         `json:"author"`
 }
 
 type User struct {
