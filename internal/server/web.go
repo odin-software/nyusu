@@ -7,7 +7,14 @@ import (
 	"os"
 
 	"github.com/odin-sofware/nyusu/internal/database"
+	"github.com/odin-sofware/nyusu/internal/rss"
 )
+
+func checkError(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+}
 
 func Basic() {
 	posts := []database.Post{
@@ -23,13 +30,14 @@ func Basic() {
 		},
 	}
 	var tmplFile = "internal/server/posts.tmpl"
-	check := func(err error) {
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
 	t, err := template.New("posts.tmpl").ParseFiles(tmplFile)
-	check(err)
+	checkError(err)
 	err = t.Execute(os.Stdout, posts)
-	check(err)
+	checkError(err)
+}
+
+func TestRssParsing(url string) {
+	r, err := rss.DataFromFeed(url)
+	checkError(err)
+	log.Println(r.Channel.Items[0].Creator)
 }

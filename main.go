@@ -36,6 +36,8 @@ func main() {
 	mux.HandleFunc("/v1/posts/bookmarks", server.CORS(cfg.MiddlewareAuth(cfg.GetBookmarkedPosts)))             // get
 	mux.HandleFunc("/v1/posts/{feedId}", server.CORS(cfg.MiddlewareAuth(cfg.GetPostByUsersAndFeed)))           // get
 	mux.HandleFunc("/v1/posts", server.CORS(cfg.MiddlewareAuth(cfg.GetPostByUsers)))                           // get
+	server.TestRssParsing("https://frontendmasters.com/blog/feed/")
+	server.TestRssParsing("https://triss.dev/blog/rss.xml")
 
 	go func() {
 		for range ticker.C {

@@ -15,7 +15,8 @@ type Entry struct {
 	Description string `xml:"description"`
 	Published   string `xml:"pubDate"`
 	Content     string `xml:"content"`
-	Creator     string `xml:",cdata"`
+	Creator     string `xml:"creator"`
+	Author      string `xml:"author"`
 }
 
 type Image struct {

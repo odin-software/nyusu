@@ -31,6 +31,25 @@ export const Secret = () => {
 
   return (
     <div>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <h2>Nyusu</h2>
+        <button onClick={handleLogout}>Logout</button>
+      </div>
+      <form onSubmit={() => addFeed()}>
+        <input
+          name="url"
+          type="text"
+          onChange={(t) => setUrl(t.currentTarget.value)}
+        />
+        <button type="submit"> Add Feed</button>
+      </form>
       <ul
         style={{
           listStyle: "none",
@@ -41,29 +60,42 @@ export const Secret = () => {
           <li
             key={p.id}
             style={{
-              backgroundColor: "whitesmoke",
+              backgroundColor: "black",
               gap: "2px",
               boxShadow: "rgba(17, 12, 46, 0.15) 0px 48px 100px 0px",
-              padding: "0em 0em",
+              padding: "1em 2em",
               margin: "1em 0em",
-              borderRadius: "0.8em",
+              borderRadius: "0.6em",
             }}
           >
-            <a href={p.url}>
-              {p.name} - {p.title}
-            </a>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-start",
+              }}
+            >
+              <a
+                className="post-title"
+                href={p.url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {p.title}
+              </a>
+              <a
+                className="post-author"
+                href={p.url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {p.name}
+              </a>
+            </div>
+            <div></div>
           </li>
         ))}
       </ul>
-      <button onClick={handleLogout}>Logout</button>
-      <form onSubmit={() => addFeed()}>
-        <input
-          name="url"
-          type="text"
-          onChange={(t) => setUrl(t.currentTarget.value)}
-        />
-        <button type="submit"> Add Feed</button>
-      </form>
     </div>
   );
 };
