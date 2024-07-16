@@ -31,9 +31,24 @@ export const Secret = () => {
 
   return (
     <div>
-      <ul>
+      <ul
+        style={{
+          listStyle: "none",
+          paddingLeft: "0em",
+        }}
+      >
         {posts?.map((p) => (
-          <li key={p.id}>
+          <li
+            key={p.id}
+            style={{
+              backgroundColor: "whitesmoke",
+              gap: "2px",
+              boxShadow: "rgba(17, 12, 46, 0.15) 0px 48px 100px 0px",
+              padding: "0em 0em",
+              margin: "1em 0em",
+              borderRadius: "0.8em",
+            }}
+          >
             <a href={p.url}>
               {p.name} - {p.title}
             </a>
