@@ -34,7 +34,9 @@ export const Secret = () => {
       <ul>
         {posts?.map((p) => (
           <li key={p.id}>
-            <a href={p.url}>{p.title}</a>
+            <a href={p.url}>
+              {p.name} - {p.title}
+            </a>
           </li>
         ))}
       </ul>

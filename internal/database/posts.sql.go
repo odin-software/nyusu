@@ -165,7 +165,7 @@ func (q *Queries) GetBookmarkedPostsByPublished(ctx context.Context, arg GetBook
 }
 
 const getPostsByUser = `-- name: GetPostsByUser :many
-SELECT p.id, p.title, p.url, p.published_at
+SELECT DISTINCT p.id, f.name, p.title, p.url, p.published_at
 FROM feed_follows ff
 INNER JOIN feeds f ON ff.feed_id = f.id
 INNER JOIN posts p ON p.feed_id = f.id
@@ -183,6 +183,7 @@ type GetPostsByUserParams struct {
 
 type GetPostsByUserRow struct {
 	ID          int64  `json:"id"`
+	Name        string `json:"name"`
 	Title       string `json:"title"`
 	Url         string `json:"url"`
 	PublishedAt int64  `json:"published_at"`
@@ -199,6 +200,7 @@ func (q *Queries) GetPostsByUser(ctx context.Context, arg GetPostsByUserParams) 
 		var i GetPostsByUserRow
 		if err := rows.Scan(
 			&i.ID,
+			&i.Name,
 			&i.Title,
 			&i.Url,
 			&i.PublishedAt,
