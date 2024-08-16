@@ -5,28 +5,39 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Nyusu</title>
+  <link rel="stylesheet" href="/static/css/index.css" />
 </head>
 
 <body>
-  <main style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
-    <div style="display: flex; align-items: center; width: 100%;">
-      <div style="visibility: hidden; width: 5rem; margin-right: auto;"></div>
+  <main>
+    <header>
+      <div class="hidden-left"></div>
       <h1>Nyusu</h1>
       {{ if .Authenticated }}
-      <form action="/users/logout" method="post" style="margin-left: auto; width: 5rem;">
+      <form class="logout" action="/users/logout" method="post">
         <button type="submit">Logout</button>
       </form>
       {{ else }}
-      <div style="visibility: hidden; width: 5rem; margin-left: auto;"></div>
+      <div class="hidden-right"></div>
       {{ end }}
-    </div>
+    </header>
     <p>a rss feeder for you</p>
-    <div style="display: flex; gap: 2rem;">
-      {{ if not .Authenticated }}
+    <section class="posts">
+      {{ if .Authenticated }}
+      <ul class="posts-list">
+        {{ range .Posts }}
+        <li>
+          <a href="{{ .Url }}">{{ .Title }}</a>
+          <span>{{ .Author }}</span>
+          <span>{{ .PublishedAt | date }}</span>
+        </li>
+        {{ end }}
+      </ul>
+      {{ else }}
       <a href="/login">Login</a>
       <a href="/register">Register</a>
       {{ end }}
-    </div>
+    </section>
   </main>
 </body>
 

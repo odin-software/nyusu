@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/odin-sofware/nyusu/internal/database"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -14,11 +13,6 @@ const SessionCookieName = "session_id"
 
 type TokenObj struct {
 	Token string `json:"token"`
-}
-
-type Claims struct {
-	Id int64 `json:"userId"`
-	jwt.RegisteredClaims
 }
 
 func (cfg *APIConfig) LoginUser(w http.ResponseWriter, r *http.Request) {

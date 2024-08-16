@@ -4,7 +4,9 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"time"
 
+	"github.com/odin-sofware/nyusu/internal/database"
 	"github.com/odin-sofware/nyusu/internal/rss"
 )
 
@@ -22,22 +24,45 @@ func TestRssParsing(url string) {
 
 type IndexData struct {
 	Authenticated bool
+	Posts         []database.GetPostsByUserRow
 }
 
 func (cfg *APIConfig) GetHome(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles("html/index.html")
+	fm := template.FuncMap{
+		"date": func(i int64) string {
+			t := time.Unix(i, 0)
+			return t.Format("02-01-2006")
+		},
+	}
+	t, err := template.New("index.html").Funcs(fm).ParseFiles("html/index.html")
 	if err != nil {
 		panic(err)
 	}
-	_, err = r.Cookie(SessionCookieName)
+	cookie, err := r.Cookie(SessionCookieName)
 	if err != nil {
 		t.Execute(w, IndexData{
 			Authenticated: false,
 		})
 		return
 	}
+	limit, offset := GetPageSizeNumber(r)
+	posts, err := cfg.DB.GetPostsByUser(cfg.ctx, database.GetPostsByUserParams{
+		Email:  cookie.Value,
+		Limit:  limit,
+		Offset: offset,
+	})
+	if err != nil {
+		log.Print(err)
+		internalServerErrorHandler(w)
+		return
+	}
+	if len(posts) < 1 {
+		notFoundHandler(w)
+		return
+	}
 	err = t.Execute(w, IndexData{
 		Authenticated: true,
+		Posts:         posts,
 	})
 	if err != nil {
 		panic(err)

@@ -8,25 +8,6 @@ import (
 	"github.com/odin-sofware/nyusu/internal/database"
 )
 
-func (cfg *APIConfig) GetPostByUsers(w http.ResponseWriter, r *http.Request, user database.User) {
-	limit, offset := GetPageSizeNumber(r)
-	posts, err := cfg.DB.GetPostsByUser(cfg.ctx, database.GetPostsByUserParams{
-		UserID: user.ID,
-		Limit:  limit,
-		Offset: offset,
-	})
-	if err != nil {
-		log.Print(err)
-		internalServerErrorHandler(w)
-		return
-	}
-	if len(posts) < 1 {
-		notFoundHandler(w)
-		return
-	}
-	respondWithJSON(w, http.StatusOK, posts)
-}
-
 func (cfg *APIConfig) GetPostByUsersAndFeed(w http.ResponseWriter, r *http.Request, user database.User) {
 	limit, offset := GetPageSizeNumber(r)
 	feedId := r.PathValue("feedId")

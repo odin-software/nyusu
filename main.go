@@ -13,11 +13,10 @@ import (
 func main() {
 	cfg := server.NewConfig()
 	ticker := time.NewTicker(time.Duration(cfg.Env.Scrapper) * time.Second)
+	fs := http.FileServer(http.Dir("./static"))
 
-	// GET localhost:8888/v1/readiness, cfg.Readiness OK 200, Bad Request 400, Not Found 404
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /v1/readiness", cfg.Readiness)
-	mux.HandleFunc("GET /v1/err", cfg.Err)
+	mux.Handle("GET /static/", http.StripPrefix("/static/", fs))
 
 	// Page endpoints.
 	mux.HandleFunc("GET /", cfg.GetHome)
@@ -56,7 +55,6 @@ func main() {
 	mux.HandleFunc("OPTIONS /v1/posts/bookmarks/{postId}", server.OPTIONS)                                     // options
 	mux.HandleFunc("GET /v1/posts/bookmarks", server.CORS(cfg.MiddlewareAuth(cfg.GetBookmarkedPosts)))         // get
 	mux.HandleFunc("GET /v1/posts/{feedId}", server.CORS(cfg.MiddlewareAuth(cfg.GetPostByUsersAndFeed)))       // get
-	mux.HandleFunc("GET /v1/posts", server.CORS(cfg.MiddlewareAuth(cfg.GetPostByUsers)))                       // get
 	// server.TestRssParsing("https://frontendmasters.com/blog/feed/")
 	// server.TestRssParsing("https://triss.dev/blog/rss.xml")
 
