@@ -40,7 +40,7 @@ type AuthHandler func(http.ResponseWriter, *http.Request, database.User)
 func NewConfig() APIConfig {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Println("Error loading .env file")
 	}
 	scrapper, err := strconv.Atoi(os.Getenv("SCRAPPER_TICK"))
 	if err != nil {
