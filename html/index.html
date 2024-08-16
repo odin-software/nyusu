@@ -25,12 +25,16 @@
     <section class="posts">
       {{ if .Authenticated }}
       <ul class="posts-list">
+        {{ if .Posts }}
         {{ range .Posts }}
         <li>
           <a href="{{ .Url }}">{{ .Title }}</a>
           <span>{{ .Author }}</span>
           <span>{{ .PublishedAt | date }}</span>
         </li>
+        {{ end }}
+        {{ else }}
+        <span>no posts</span>
         {{ end }}
       </ul>
       {{ else }}

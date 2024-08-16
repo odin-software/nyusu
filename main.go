@@ -1,13 +1,13 @@
 package main
 
 import (
-	"html/template"
 	"log"
 	"net/http"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/odin-sofware/nyusu/internal/server"
+	// _ "github.com/tursodatabase/libsql-client-go/libsql"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
@@ -20,21 +20,8 @@ func main() {
 
 	// Page endpoints.
 	mux.HandleFunc("GET /", cfg.GetHome)
-	mux.HandleFunc("GET /login", func(w http.ResponseWriter, r *http.Request) {
-		_, err := r.Cookie(server.SessionCookieName)
-		if err == nil {
-			http.Redirect(w, r, "/", http.StatusSeeOther)
-			return
-		}
-		t, err := template.ParseFiles("html/login.html")
-		if err != nil {
-			panic(err)
-		}
-		err = t.Execute(w, "")
-		if err != nil {
-			panic(err)
-		}
-	})
+	mux.HandleFunc("GET /login", cfg.GetLogin)
+	mux.HandleFunc("GET /register", cfg.GetRegister)
 
 	mux.HandleFunc("POST /users/login", server.CORS(cfg.LoginUser))                   // post
 	mux.HandleFunc("POST /users/logout", server.CORS(cfg.LogoutUser))                 // post

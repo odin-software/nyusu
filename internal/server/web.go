@@ -27,6 +27,11 @@ type IndexData struct {
 	Posts         []database.GetPostsByUserRow
 }
 
+type AuthPageData struct {
+	Register bool
+	Error    string
+}
+
 func (cfg *APIConfig) GetHome(w http.ResponseWriter, r *http.Request) {
 	fm := template.FuncMap{
 		"date": func(i int64) string {
@@ -57,12 +62,57 @@ func (cfg *APIConfig) GetHome(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(posts) < 1 {
-		notFoundHandler(w)
+		t.Execute(w, IndexData{
+			Authenticated: true,
+			Posts:         []database.GetPostsByUserRow{},
+		})
 		return
 	}
 	err = t.Execute(w, IndexData{
 		Authenticated: true,
 		Posts:         posts,
+	})
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (cfg *APIConfig) GetLogin(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	error := query.Get("error")
+	_, err := r.Cookie(SessionCookieName)
+	if err == nil {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	t, err := template.ParseFiles("html/auth.html")
+	if err != nil {
+		panic(err)
+	}
+	err = t.Execute(w, AuthPageData{
+		Register: false,
+		Error:    error,
+	})
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (cfg *APIConfig) GetRegister(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	error := query.Get("error")
+	_, err := r.Cookie(SessionCookieName)
+	if err == nil {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	t, err := template.ParseFiles("html/auth.html")
+	if err != nil {
+		panic(err)
+	}
+	err = t.Execute(w, AuthPageData{
+		Register: true,
+		Error:    error,
 	})
 	if err != nil {
 		panic(err)

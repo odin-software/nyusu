@@ -1,7 +1,6 @@
 package server
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 
@@ -15,20 +14,23 @@ type TokenObj struct {
 	Token string `json:"token"`
 }
 
+// turso token
+// eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3MjM4MjkyNjQsImlkIjoiMDMzZjc1MjItNTk2YS00MDUyLTliMTItY2NjZWZlOGVmYzM2In0.ZmtPvEyquOL1LNKMT2f8wN06l_20b84wcCBwGYDScru6YaKh2EBe0Hcou-4YoKCWTFY04Dzaheu3D6B8tm_VAA
+
 func (cfg *APIConfig) LoginUser(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 	user, err := cfg.DB.GetUserByEmail(cfg.ctx, email)
 	if err != nil {
-		unathorizedHandler(w)
+		http.Redirect(w, r, `/login?error=invalid credentials`, http.StatusSeeOther)
 		return
 	}
 	b := CheckPasswordHash(password, user.Password)
 	if !b {
-		unathorizedHandler(w)
+		http.Redirect(w, r, `/login?error=invalid credentials`, http.StatusSeeOther)
 		return
 	}
+
 	cfg.SessionMng.Mutex.Lock()
 	cfg.SessionMng.Sessions[email] = true
 	cfg.SessionMng.Mutex.Unlock()
@@ -46,7 +48,6 @@ func (cfg *APIConfig) LoginUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cfg *APIConfig) LogoutUser(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	cookie, err := r.Cookie(SessionCookieName)
 	if err == nil {
 		cfg.SessionMng.Mutex.Lock()
@@ -65,24 +66,26 @@ func (cfg *APIConfig) LogoutUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cfg *APIConfig) RegisterUser(w http.ResponseWriter, r *http.Request) {
-	var reqUser *struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
+	email := r.FormValue("email")
+	password := r.FormValue("password")
+	confirmPassword := r.FormValue("confirmPassword")
+	if password != confirmPassword {
+		http.Redirect(w, r, `/register?error=passwords do not match`, http.StatusSeeOther)
+		return
 	}
-	err := json.NewDecoder(r.Body).Decode(&reqUser)
+	_, err := cfg.DB.GetUserByEmail(cfg.ctx, email)
+	if err == nil {
+		http.Redirect(w, r, `/register?error=user already exists`, http.StatusSeeOther)
+		return
+	}
+	hashedPassword, err := HashPassword(password)
 	if err != nil {
 		log.Print(err)
 		badRequestHandler(w)
 		return
 	}
-	hashedPassword, err := HashPassword(reqUser.Password)
-	if err != nil {
-		log.Print(err)
-		badRequestHandler(w)
-		return
-	}
-	user, err := cfg.DB.CreateUser(cfg.ctx, database.CreateUserParams{
-		Email:    reqUser.Email,
+	_, err = cfg.DB.CreateUser(cfg.ctx, database.CreateUserParams{
+		Email:    email,
 		Password: hashedPassword,
 	})
 	if err != nil {
@@ -90,7 +93,21 @@ func (cfg *APIConfig) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		internalServerErrorHandler(w)
 		return
 	}
-	respondWithJSON(w, http.StatusOK, user)
+
+	cfg.SessionMng.Mutex.Lock()
+	cfg.SessionMng.Sessions[email] = true
+	cfg.SessionMng.Mutex.Unlock()
+
+	// TODO: also set domain before deploying
+	http.SetCookie(w, &http.Cookie{
+		Name:     SessionCookieName,
+		Value:    email,
+		Path:     "/",
+		HttpOnly: true,
+		MaxAge:   60 * 60 * 24 * 3,
+	})
+
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func (cfg *APIConfig) MiddlewareAuth(handler AuthHandler) http.HandlerFunc {
