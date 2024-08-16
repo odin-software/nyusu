@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"strings"
-	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/odin-sofware/nyusu/internal/database"
 	"golang.org/x/crypto/bcrypt"
 )
+
+const SessionCookieName = "session_id"
 
 type TokenObj struct {
 	Token string `json:"token"`
@@ -23,28 +23,51 @@ type Claims struct {
 
 func (cfg *APIConfig) LoginUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	var reqUser *struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
-	err := json.NewDecoder(r.Body).Decode(&reqUser)
-	if err != nil {
-		badRequestHandler(w)
-		return
-	}
-	user, err := cfg.DB.GetUserByEmail(cfg.ctx, reqUser.Email)
+	email := r.FormValue("email")
+	password := r.FormValue("password")
+	user, err := cfg.DB.GetUserByEmail(cfg.ctx, email)
 	if err != nil {
 		unathorizedHandler(w)
 		return
 	}
-	b := CheckPasswordHash(reqUser.Password, user.Password)
+	b := CheckPasswordHash(password, user.Password)
 	if !b {
 		unathorizedHandler(w)
 		return
 	}
-	token, _ := generateJWT(string(cfg.Env.SecretKey), user.ID)
-	t := TokenObj{Token: token}
-	respondWithJSON(w, http.StatusOK, t)
+	cfg.SessionMng.Mutex.Lock()
+	cfg.SessionMng.Sessions[email] = true
+	cfg.SessionMng.Mutex.Unlock()
+
+	// TODO: also set domain before deploying
+	http.SetCookie(w, &http.Cookie{
+		Name:     SessionCookieName,
+		Value:    email,
+		Path:     "/",
+		HttpOnly: true,
+		MaxAge:   60 * 60 * 24 * 3,
+	})
+
+	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+func (cfg *APIConfig) LogoutUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	cookie, err := r.Cookie(SessionCookieName)
+	if err == nil {
+		cfg.SessionMng.Mutex.Lock()
+		delete(cfg.SessionMng.Sessions, cookie.Value)
+		cfg.SessionMng.Mutex.Unlock()
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:   SessionCookieName,
+		Value:  "",
+		Path:   "/",
+		MaxAge: -1,
+	})
+
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func (cfg *APIConfig) RegisterUser(w http.ResponseWriter, r *http.Request) {
@@ -78,32 +101,14 @@ func (cfg *APIConfig) RegisterUser(w http.ResponseWriter, r *http.Request) {
 
 func (cfg *APIConfig) MiddlewareAuth(handler AuthHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		header := r.Header.Get("Authorization")
-		key := strings.Split(header, " ")
-		if key[0] != "Bearer" || len(key) < 2 {
-			unathorizedHandler(w)
-			return
-		}
-		claims := &Claims{}
-		tkn, err := jwt.ParseWithClaims(key[1], claims, func(token *jwt.Token) (interface{}, error) {
-			return cfg.Env.SecretKey, nil
-		})
+		cookie, err := r.Cookie(SessionCookieName)
 		if err != nil {
-			if err == jwt.ErrSignatureInvalid {
-				unathorizedHandler(w)
-				return
-			}
-			badRequestHandler(w)
+			http.Redirect(w, r, "/", http.StatusMovedPermanently)
 			return
 		}
-		if !tkn.Valid {
-			unathorizedHandler(w)
-			return
-		}
-		user, err := cfg.DB.GetUserById(cfg.ctx, claims.Id)
+		user, err := cfg.DB.GetUserByEmail(cfg.ctx, cookie.String())
 		if err != nil {
-			log.Print(err)
-			notFoundHandler(w)
+			http.Redirect(w, r, "/", http.StatusMovedPermanently)
 			return
 		}
 		handler(w, r, user)
@@ -132,20 +137,6 @@ func OPTIONS(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
 	w.Header().Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 	http.Error(w, "No Content", http.StatusNoContent)
-}
-
-func generateJWT(key string, id int64) (string, error) {
-	expirationTime := time.Now().Add(48 * time.Hour)
-	claims := &Claims{
-		Id: id,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expirationTime),
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	return token.SignedString([]byte(key))
 }
 
 func HashPassword(password string) (string, error) {

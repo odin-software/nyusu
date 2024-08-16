@@ -23,10 +23,16 @@ type Environment struct {
 	SecretKey []byte
 }
 
+type SessionManagement struct {
+	Sessions map[string]bool
+	Mutex    *sync.Mutex
+}
+
 type APIConfig struct {
-	ctx context.Context
-	DB  *database.Queries
-	Env Environment
+	ctx        context.Context
+	SessionMng SessionManagement
+	DB         *database.Queries
+	Env        Environment
 }
 
 type AuthHandler func(http.ResponseWriter, *http.Request, database.User)
@@ -55,10 +61,18 @@ func NewConfig() APIConfig {
 	}
 	dbQueries := database.New(db)
 
+	sessions := make(map[string]bool)
+	sessionMutex := sync.Mutex{}
+	sessionMng := SessionManagement{
+		Sessions: sessions,
+		Mutex:    &sessionMutex,
+	}
+
 	return APIConfig{
-		ctx: ctx,
-		DB:  dbQueries,
-		Env: env,
+		ctx:        ctx,
+		DB:         dbQueries,
+		Env:        env,
+		SessionMng: sessionMng,
 	}
 }
 

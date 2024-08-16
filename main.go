@@ -20,17 +20,13 @@ func main() {
 	mux.HandleFunc("GET /v1/err", cfg.Err)
 
 	// Page endpoints.
-	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		t, err := template.ParseFiles("html/index.html")
-		if err != nil {
-			panic(err)
-		}
-		err = t.Execute(w, "")
-		if err != nil {
-			panic(err)
-		}
-	})
+	mux.HandleFunc("GET /", cfg.GetHome)
 	mux.HandleFunc("GET /login", func(w http.ResponseWriter, r *http.Request) {
+		_, err := r.Cookie(server.SessionCookieName)
+		if err == nil {
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
 		t, err := template.ParseFiles("html/login.html")
 		if err != nil {
 			panic(err)
@@ -41,8 +37,9 @@ func main() {
 		}
 	})
 
-	mux.HandleFunc("POST /v1/users/login", server.CORS(cfg.LoginUser))                // post
-	mux.HandleFunc("POST /v1/users/register", server.CORS(cfg.RegisterUser))          // post
+	mux.HandleFunc("POST /users/login", server.CORS(cfg.LoginUser))                   // post
+	mux.HandleFunc("POST /users/logout", server.CORS(cfg.LogoutUser))                 // post
+	mux.HandleFunc("POST /users/register", server.CORS(cfg.RegisterUser))             // post
 	mux.HandleFunc("GET /v1/users", server.CORS(cfg.MiddlewareAuth(cfg.GetAuthUser))) // get
 
 	mux.HandleFunc("GET /v1/feeds", server.CORS(cfg.GetAllFeeds))                     // get
