@@ -33,11 +33,6 @@ func notFoundHandler(w http.ResponseWriter) {
 	w.Write([]byte("404 Not Found"))
 }
 
-func unathorizedHandler(w http.ResponseWriter) {
-	w.WriteHeader(http.StatusUnauthorized)
-	w.Write([]byte("401 Unauthorized"))
-}
-
 func respondOk(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusOK)
 }

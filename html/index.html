@@ -11,12 +11,14 @@
 <body>
   <main>
     <header>
-      <div class="hidden-left"></div>
       <h1>Nyusu</h1>
       {{ if .Authenticated }}
-      <form class="logout" action="/users/logout" method="post">
-        <button type="submit">Logout</button>
-      </form>
+      <div class="logout">
+        <a href="/add">Add Feed</a>
+        <form action="/users/logout" method="post">
+          <button type="submit">Logout</button>
+        </form>
+      </div>
       {{ else }}
       <div class="hidden-right"></div>
       {{ end }}
@@ -28,8 +30,8 @@
         {{ if .Posts }}
         {{ range .Posts }}
         <li>
-          <a href="{{ .Url }}">{{ .Title }}</a>
-          <span>{{ .Author }}</span>
+          <a rel="noopener noreferrer" href="{{ .Url }}">{{ .Title }}</a>
+          <span>{{ .Name }}</span>
           <span>{{ .PublishedAt | date }}</span>
         </li>
         {{ end }}

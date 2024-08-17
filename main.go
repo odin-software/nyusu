@@ -23,9 +23,9 @@ func main() {
 	mux.HandleFunc("GET /login", cfg.GetLogin)
 	mux.HandleFunc("GET /register", cfg.GetRegister)
 
-	mux.HandleFunc("POST /users/login", server.CORS(cfg.LoginUser))                   // post
-	mux.HandleFunc("POST /users/logout", server.CORS(cfg.LogoutUser))                 // post
-	mux.HandleFunc("POST /users/register", server.CORS(cfg.RegisterUser))             // post
+	mux.HandleFunc("POST /users/login", cfg.LoginUser)
+	mux.HandleFunc("POST /users/logout", cfg.LogoutUser)
+	mux.HandleFunc("POST /users/register", cfg.RegisterUser)
 	mux.HandleFunc("GET /v1/users", server.CORS(cfg.MiddlewareAuth(cfg.GetAuthUser))) // get
 
 	mux.HandleFunc("GET /v1/feeds", server.CORS(cfg.GetAllFeeds))                     // get
