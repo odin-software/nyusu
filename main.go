@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/odin-sofware/nyusu/internal/server"
-	// _ "github.com/tursodatabase/libsql-client-go/libsql"
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/tursodatabase/libsql-client-go/libsql"
+	// _ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
