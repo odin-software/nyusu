@@ -32,6 +32,11 @@ type AuthPageData struct {
 	Error    string
 }
 
+type AddFeedData struct {
+	Authenticated bool
+	Error         string
+}
+
 func (cfg *APIConfig) GetHome(w http.ResponseWriter, r *http.Request) {
 	fm := template.FuncMap{
 		"date": func(i int64) string {
@@ -113,6 +118,27 @@ func (cfg *APIConfig) GetRegister(w http.ResponseWriter, r *http.Request) {
 	err = t.Execute(w, AuthPageData{
 		Register: true,
 		Error:    error,
+	})
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (cfg *APIConfig) GetAddFeed(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	error := query.Get("error")
+	_, err := r.Cookie(SessionCookieName)
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	t, err := template.ParseFiles("html/layout.html", "html/add.html")
+	if err != nil {
+		panic(err)
+	}
+	err = t.ExecuteTemplate(w, "layout", AddFeedData{
+		Authenticated: true,
+		Error:         error,
 	})
 	if err != nil {
 		panic(err)

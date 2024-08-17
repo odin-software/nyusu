@@ -31,23 +31,26 @@ func (cfg *APIConfig) GetAllFeeds(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, feeds)
 }
 
-func (cfg *APIConfig) CreateFeed(w http.ResponseWriter, r *http.Request, user database.User) {
-	var reqFeed *struct {
-		Url string `json:"url,omitempty"`
-	}
-	err := json.NewDecoder(r.Body).Decode(&reqFeed)
+func (cfg *APIConfig) CreateFeed(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie(SessionCookieName)
 	if err != nil {
-		badRequestHandler(w)
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
-	rss, err := rss.DataFromFeed(reqFeed.Url)
+	url := r.FormValue("rss")
+	rss, err := rss.DataFromFeed(url)
+	if err != nil {
+		http.Redirect(w, r, "/add?error=couldn't process url", http.StatusSeeOther)
+		return
+	}
+	user, err := cfg.DB.GetUserByEmail(cfg.ctx, cookie.Value)
 	if err != nil {
 		log.Print(err)
 		internalServerErrorHandler(w)
 		return
 	}
 	feed, err := cfg.DB.CreateFeed(cfg.ctx, database.CreateFeedParams{
-		Url:         reqFeed.Url,
+		Url:         url,
 		Name:        rss.Channel.Title,
 		Description: sql.NullString{String: rss.Channel.Description, Valid: true},
 		ImageUrl:    sql.NullString{String: rss.Channel.Image.Url, Valid: true},
@@ -60,7 +63,7 @@ func (cfg *APIConfig) CreateFeed(w http.ResponseWriter, r *http.Request, user da
 		internalServerErrorHandler(w)
 		return
 	}
-	feedFollow, err := cfg.DB.CreateFeedFollows(cfg.ctx, database.CreateFeedFollowsParams{
+	_, err = cfg.DB.CreateFeedFollows(cfg.ctx, database.CreateFeedFollowsParams{
 		UserID: user.ID,
 		FeedID: feed.ID,
 	})
@@ -69,15 +72,9 @@ func (cfg *APIConfig) CreateFeed(w http.ResponseWriter, r *http.Request, user da
 		internalServerErrorHandler(w)
 		return
 	}
-	res := struct {
-		Feed       database.Feed       `json:"feed"`
-		FeedFollow database.FeedFollow `json:"feed_follow"`
-	}{
-		Feed:       feed,
-		FeedFollow: feedFollow,
-	}
+
 	cfg.FetchOneFeedSync(feed.ID, feed.Url)
-	respondWithJSON(w, http.StatusCreated, res)
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func (cfg *APIConfig) GetFeedFollowsFromUser(w http.ResponseWriter, r *http.Request, user database.User) {

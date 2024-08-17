@@ -14,9 +14,6 @@ type TokenObj struct {
 	Token string `json:"token"`
 }
 
-// turso token
-// eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3MjM4MjkyNjQsImlkIjoiMDMzZjc1MjItNTk2YS00MDUyLTliMTItY2NjZWZlOGVmYzM2In0.ZmtPvEyquOL1LNKMT2f8wN06l_20b84wcCBwGYDScru6YaKh2EBe0Hcou-4YoKCWTFY04Dzaheu3D6B8tm_VAA
-
 func (cfg *APIConfig) LoginUser(w http.ResponseWriter, r *http.Request) {
 	email := r.FormValue("email")
 	password := r.FormValue("password")

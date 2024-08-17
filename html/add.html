@@ -1,0 +1,16 @@
+{{ define "css" }}
+<link rel="stylesheet" href="/static/css/index.css" />
+{{ end }}
+
+{{ define "body" }}
+<form method="post" action="/feed" style="display: flex; flex-direction: column; gap: 1rem; padding: 0 .5em;">
+  <label for="rss">Rss url</label>
+  <input name="rss" type="url" required />
+  {{ if .Error }}
+  <span style="font-size: 12px; color: red;">
+    {{ .Error }}
+  </span>
+  {{ end }}
+  <button style="font-family: monospace;" type="submit">Add</button>
+</form>
+{{ end }}
