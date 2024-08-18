@@ -1,0 +1,21 @@
+{{ define "css" }}
+<link rel="stylesheet" href="/static/css/index.css" />
+{{ end }}
+
+{{ define "body" }}
+<section class="posts">
+  <ul class="posts-list">
+    {{ if .Posts }}
+    {{ range .Posts }}
+    <li>
+      <a rel="noopener noreferrer" href="{{ .Url }}">{{ .Title }}</a>
+      <span>{{ .Name }}</span>
+      <span>{{ .PublishedAt | date }}</span>
+    </li>
+    {{ end }}
+    {{ else }}
+    <span>no feeds</span>
+    {{ end }}
+  </ul>
+</section>
+{{ end }}

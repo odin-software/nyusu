@@ -13,7 +13,7 @@ import (
 	"github.com/odin-sofware/nyusu/internal/rss"
 )
 
-func (cfg *APIConfig) GetAllFeeds(w http.ResponseWriter, r *http.Request) {
+func (cfg *APIConfig) GetAllFeeds2(w http.ResponseWriter, r *http.Request) {
 	ps, pn := GetPageSizeNumber(r)
 	feeds, err := cfg.DB.GetAllFeeds(cfg.ctx, database.GetAllFeedsParams{
 		Limit:  ps,

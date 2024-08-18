@@ -8,33 +8,6 @@ import (
 	"github.com/odin-sofware/nyusu/internal/database"
 )
 
-func (cfg *APIConfig) GetPostByUsersAndFeed(w http.ResponseWriter, r *http.Request, user database.User) {
-	limit, offset := GetPageSizeNumber(r)
-	feedId := r.PathValue("feedId")
-	id, err := strconv.ParseInt(feedId, 10, 64)
-	if err != nil {
-		log.Print(err)
-		badRequestHandler(w)
-		return
-	}
-	posts, err := cfg.DB.GetPostsByUserAndFeed(cfg.ctx, database.GetPostsByUserAndFeedParams{
-		UserID: user.ID,
-		ID:     id,
-		Limit:  limit,
-		Offset: offset,
-	})
-	if err != nil {
-		log.Print(err)
-		internalServerErrorHandler(w)
-		return
-	}
-	if len(posts) < 1 {
-		notFoundHandler(w)
-		return
-	}
-	respondWithJSON(w, http.StatusOK, posts)
-}
-
 func (cfg *APIConfig) GetBookmarkedPosts(w http.ResponseWriter, r *http.Request, user database.User) {
 	limit, offset := GetPageSizeNumber(r)
 	q := r.URL.Query()

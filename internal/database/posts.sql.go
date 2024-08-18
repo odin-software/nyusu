@@ -225,33 +225,35 @@ func (q *Queries) GetPostsByUser(ctx context.Context, arg GetPostsByUserParams) 
 }
 
 const getPostsByUserAndFeed = `-- name: GetPostsByUserAndFeed :many
-SELECT p.id, p.title, p.url, p.published_at
+SELECT p.id, p.title, f.name, p.url, p.published_at
 FROM feed_follows ff
 INNER JOIN feeds f ON ff.feed_id = f.id
 INNER JOIN posts p ON p.feed_id = f.id
-WHERE ff.user_id = ? AND f.id = ?
+INNER JOIN users u ON ff.user_id = u.id
+WHERE u.email = ? AND f.id = ?
 ORDER BY p.published_at DESC
 LIMIT ?
 OFFSET ?
 `
 
 type GetPostsByUserAndFeedParams struct {
-	UserID int64 `json:"user_id"`
-	ID     int64 `json:"id"`
-	Limit  int64 `json:"limit"`
-	Offset int64 `json:"offset"`
+	Email  string `json:"email"`
+	ID     int64  `json:"id"`
+	Limit  int64  `json:"limit"`
+	Offset int64  `json:"offset"`
 }
 
 type GetPostsByUserAndFeedRow struct {
 	ID          int64  `json:"id"`
 	Title       string `json:"title"`
+	Name        string `json:"name"`
 	Url         string `json:"url"`
 	PublishedAt int64  `json:"published_at"`
 }
 
 func (q *Queries) GetPostsByUserAndFeed(ctx context.Context, arg GetPostsByUserAndFeedParams) ([]GetPostsByUserAndFeedRow, error) {
 	rows, err := q.db.QueryContext(ctx, getPostsByUserAndFeed,
-		arg.UserID,
+		arg.Email,
 		arg.ID,
 		arg.Limit,
 		arg.Offset,
@@ -266,6 +268,7 @@ func (q *Queries) GetPostsByUserAndFeed(ctx context.Context, arg GetPostsByUserA
 		if err := rows.Scan(
 			&i.ID,
 			&i.Title,
+			&i.Name,
 			&i.Url,
 			&i.PublishedAt,
 		); err != nil {

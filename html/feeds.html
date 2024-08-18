@@ -1,0 +1,20 @@
+{{ define "css" }}
+<link rel="stylesheet" href="/static/css/index.css" />
+{{ end }}
+
+{{ define "body" }}
+<section class="posts">
+  <ul class="posts-list">
+    {{ if .Feeds }}
+    {{ range .Feeds }}
+    <li>
+      <a rel="noopener noreferrer" href="/feeds/{{ .ID }}">{{ .Name }}</a>
+      <span>{{ .Description.String }}</span>
+    </li>
+    {{ end }}
+    {{ else }}
+    <span>no feeds</span>
+    {{ end }}
+  </ul>
+</section>
+{{ end }}

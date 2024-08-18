@@ -15,11 +15,12 @@ LIMIT ?
 OFFSET ?;
 
 -- name: GetPostsByUserAndFeed :many
-SELECT p.id, p.title, p.url, p.published_at
+SELECT p.id, p.title, f.name, p.url, p.published_at
 FROM feed_follows ff
 INNER JOIN feeds f ON ff.feed_id = f.id
 INNER JOIN posts p ON p.feed_id = f.id
-WHERE ff.user_id = ? AND f.id = ?
+INNER JOIN users u ON ff.user_id = u.id
+WHERE u.email = ? AND f.id = ?
 ORDER BY p.published_at DESC
 LIMIT ?
 OFFSET ?;

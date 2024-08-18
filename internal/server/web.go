@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/odin-sofware/nyusu/internal/database"
@@ -35,6 +36,17 @@ type AuthPageData struct {
 type AddFeedData struct {
 	Authenticated bool
 	Error         string
+}
+
+type AllFeedsData struct {
+	Authenticated bool
+	Error         string
+	Feeds         []database.GetAllFeedFollowsByEmailRow
+}
+
+type FeedPostsData struct {
+	Authenticated bool
+	Posts         []database.GetPostsByUserAndFeedRow
 }
 
 func (cfg *APIConfig) GetHome(w http.ResponseWriter, r *http.Request) {
@@ -139,6 +151,81 @@ func (cfg *APIConfig) GetAddFeed(w http.ResponseWriter, r *http.Request) {
 	err = t.ExecuteTemplate(w, "layout", AddFeedData{
 		Authenticated: true,
 		Error:         error,
+	})
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (cfg *APIConfig) GetAllFeeds(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	error := query.Get("error")
+	cookie, err := r.Cookie(SessionCookieName)
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	limit, offset := GetPageSizeNumber(r)
+	feeds, err := cfg.DB.GetAllFeedFollowsByEmail(cfg.ctx, database.GetAllFeedFollowsByEmailParams{
+		Email:  cookie.Value,
+		Limit:  limit,
+		Offset: offset,
+	})
+	if err != nil {
+		log.Println(err)
+		internalServerErrorHandler(w)
+		return
+	}
+	t, err := template.ParseFiles("html/layout.html", "html/feeds.html")
+	if err != nil {
+		panic(err)
+	}
+	err = t.ExecuteTemplate(w, "layout", AllFeedsData{
+		Authenticated: true,
+		Error:         error,
+		Feeds:         feeds,
+	})
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (cfg *APIConfig) GetFeedPosts(w http.ResponseWriter, r *http.Request) {
+	fm := template.FuncMap{
+		"date": func(i int64) string {
+			t := time.Unix(i, 0)
+			return t.Format("02-01-2006")
+		},
+	}
+	feed := r.PathValue("feedId")
+	cookie, err := r.Cookie(SessionCookieName)
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	feedId, err := strconv.Atoi(feed)
+	if err != nil {
+		http.Redirect(w, r, "/", http.StatusMovedPermanently)
+	}
+	limit, offset := GetPageSizeNumber(r)
+	posts, err := cfg.DB.GetPostsByUserAndFeed(cfg.ctx, database.GetPostsByUserAndFeedParams{
+		Email:  cookie.Value,
+		ID:     int64(feedId),
+		Limit:  limit,
+		Offset: offset,
+	})
+	if err != nil {
+		log.Println(err)
+		internalServerErrorHandler(w)
+		return
+	}
+	t, err := template.New("layout.html").Funcs(fm).ParseFiles("html/layout.html", "html/feeds_posts.html")
+	if err != nil {
+		panic(err)
+	}
+	err = t.ExecuteTemplate(w, "layout", FeedPostsData{
+		Authenticated: true,
+		Posts:         posts,
 	})
 	if err != nil {
 		panic(err)

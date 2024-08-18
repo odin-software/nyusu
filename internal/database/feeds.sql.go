@@ -55,7 +55,7 @@ func (q *Queries) CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, e
 
 const createFeedFollows = `-- name: CreateFeedFollows :one
 INSERT INTO feed_follows (user_id, feed_id)
-VALUES (?, ?) 
+VALUES (?, ?)
 RETURNING id, user_id, feed_id, created_at, updated_at, "foreign"
 `
 
@@ -86,6 +86,61 @@ WHERE id = ?
 func (q *Queries) DeleteFeedFollows(ctx context.Context, id int64) error {
 	_, err := q.db.ExecContext(ctx, deleteFeedFollows, id)
 	return err
+}
+
+const getAllFeedFollowsByEmail = `-- name: GetAllFeedFollowsByEmail :many
+SELECT f.id, f."name", f.url, f.description, f.created_at, ff.id
+FROM feed_follows ff
+INNER JOIN feeds f ON ff.feed_id = f.id
+INNER JOIN users u ON ff.user_id = u.id
+WHERE u.email = ?
+LIMIT ?
+OFFSET ?
+`
+
+type GetAllFeedFollowsByEmailParams struct {
+	Email  string `json:"email"`
+	Limit  int64  `json:"limit"`
+	Offset int64  `json:"offset"`
+}
+
+type GetAllFeedFollowsByEmailRow struct {
+	ID          int64          `json:"id"`
+	Name        string         `json:"name"`
+	Url         string         `json:"url"`
+	Description sql.NullString `json:"description"`
+	CreatedAt   int64          `json:"created_at"`
+	ID_2        int64          `json:"id_2"`
+}
+
+func (q *Queries) GetAllFeedFollowsByEmail(ctx context.Context, arg GetAllFeedFollowsByEmailParams) ([]GetAllFeedFollowsByEmailRow, error) {
+	rows, err := q.db.QueryContext(ctx, getAllFeedFollowsByEmail, arg.Email, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAllFeedFollowsByEmailRow
+	for rows.Next() {
+		var i GetAllFeedFollowsByEmailRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Url,
+			&i.Description,
+			&i.CreatedAt,
+			&i.ID_2,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getAllFeeds = `-- name: GetAllFeeds :many
@@ -185,7 +240,7 @@ func (q *Queries) GetFeedFollowsFromUser(ctx context.Context, userID int64) ([]G
 }
 
 const getNextFeedsToFetch = `-- name: GetNextFeedsToFetch :many
-SELECT id, name, url 
+SELECT id, name, url
 FROM feeds
 ORDER BY last_fetched_at ASC
 LIMIT ?
