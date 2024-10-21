@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/odin-sofware/nyusu/internal/database"
+	"github.com/odin-software/nyusu/internal/database"
 	"golang.org/x/crypto/bcrypt"
 )
 

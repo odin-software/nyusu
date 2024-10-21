@@ -6,7 +6,7 @@ import (
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/odin-sofware/nyusu/internal/server"
+	"github.com/odin-software/nyusu/internal/server"
 	_ "github.com/tursodatabase/libsql-client-go/libsql"
 )
 

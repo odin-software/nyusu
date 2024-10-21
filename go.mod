@@ -1,4 +1,4 @@
-module github.com/odin-sofware/nyusu
+module github.com/odin-software/nyusu
 
 go 1.22.0
 

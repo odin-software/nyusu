@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/odin-sofware/nyusu/internal/database"
-	"github.com/odin-sofware/nyusu/internal/rss"
+	"github.com/odin-software/nyusu/internal/database"
+	"github.com/odin-software/nyusu/internal/rss"
 )
 
 func (cfg *APIConfig) GetAllFeeds2(w http.ResponseWriter, r *http.Request) {

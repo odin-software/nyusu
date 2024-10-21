@@ -3,7 +3,7 @@ package server
 import (
 	"net/http"
 
-	"github.com/odin-sofware/nyusu/internal/database"
+	"github.com/odin-software/nyusu/internal/database"
 )
 
 type UserWithoutPassword struct {

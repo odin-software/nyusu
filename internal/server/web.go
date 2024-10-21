@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/odin-sofware/nyusu/internal/database"
-	"github.com/odin-sofware/nyusu/internal/rss"
+	"github.com/odin-software/nyusu/internal/database"
+	"github.com/odin-software/nyusu/internal/rss"
 )
 
 func checkError(err error) {

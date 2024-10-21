@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/odin-sofware/nyusu/internal/database"
+	"github.com/odin-software/nyusu/internal/database"
 )
 
 func (cfg *APIConfig) GetBookmarkedPosts(w http.ResponseWriter, r *http.Request, user database.User) {

@@ -11,8 +11,8 @@ import (
 	"sync"
 
 	"github.com/joho/godotenv"
-	"github.com/odin-sofware/nyusu/internal/database"
-	"github.com/odin-sofware/nyusu/internal/rss"
+	"github.com/odin-software/nyusu/internal/database"
+	"github.com/odin-software/nyusu/internal/rss"
 )
 
 type Environment struct {
