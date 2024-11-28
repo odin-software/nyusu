@@ -1,50 +1,26 @@
-<!DOCTYPE html>
-<html lang="en">
+{{ define "css" }}
+<link rel="stylesheet" href="/static/css/index.css" />
+{{ end }}
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nyusu</title>
-  <link rel="stylesheet" href="/static/css/index.css" />
-</head>
-
-<body>
-  <main>
-    <header>
-      <h1><a href="/">Nyusu</a></h1>
-      {{ if .Authenticated }}
-      <div class="logout">
-        <a href="/add">Add Feed</a>
-        <form action="/users/logout" method="post">
-          <button type="submit">Logout</button>
-        </form>
-      </div>
-      {{ else }}
-      <div class="hidden-right"></div>
-      {{ end }}
-    </header>
-    <p>a rss feeder for you</p>
-    <section class="posts">
-      {{ if .Authenticated }}
-      <ul class="posts-list">
-        {{ if .Posts }}
-        {{ range .Posts }}
-        <li>
-          <a rel="noopener noreferrer" href="{{ .Url }}">{{ .Title }}</a>
-          <span>{{ .Name }}</span>
-          <span>{{ .PublishedAt | date }}</span>
-        </li>
-        {{ end }}
-        {{ else }}
-        <span>no posts</span>
-        {{ end }}
-      </ul>
-      {{ else }}
-      <a href="/login">Login</a>
-      <a href="/register">Register</a>
-      {{ end }}
-    </section>
-  </main>
-</body>
-
-</html>
+{{ define "body" }}
+<section class="posts">
+  {{ if .Authenticated }}
+  <ul class="posts-list">
+    {{ if .Posts }}
+    {{ range .Posts }}
+    <li>
+      <a rel="noopener noreferrer" href="{{ .Url }}">{{ .Title }}</a>
+      <span>{{ .Name }}</span>
+      <span>{{ .PublishedAt | date }}</span>
+    </li>
+    {{ end }}
+    {{ else }}
+    <span>no posts</span>
+    {{ end }}
+  </ul>
+  {{ else }}
+  <a href="/login">Login</a>
+  <a href="/register">Register</a>
+  {{ end }}
+</section>
+{{ end }}
