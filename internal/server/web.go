@@ -56,7 +56,8 @@ func (cfg *APIConfig) GetHome(w http.ResponseWriter, r *http.Request) {
 			return t.Format("02-01-2006")
 		},
 	}
-	t, err := template.New("index.html").Funcs(fm).ParseFiles("html/index.html")
+	t, err := template.New("layout/index").Funcs(fm).ParseFiles("html/layout.html", "html/index.html")
+	log.Println(t)
 	if err != nil {
 		panic(err)
 	}
