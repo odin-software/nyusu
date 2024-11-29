@@ -1,0 +1,58 @@
+body {
+  display: grid;
+  grid-template-rows: 2fr auto;
+  font-family: monospace;
+  font-size: 16px;
+  max-width: 48rem;
+}
+
+header {
+  section {
+    display: grid;
+    grid-template-columns: 2fr auto;
+    align-items: center;
+
+    h1 {
+      a {
+        text-decoration: none;
+        color: black;
+      }
+    }
+  }
+
+  nav {
+    ul {
+      display: grid;
+      list-style: none;
+      padding: 0;
+      grid-template-columns: auto auto auto;
+      justify-content: space-evenly;
+      font-size: 1rem;
+      margin: 0 0 1rem 0;
+
+      a {
+        background-color: aqua;
+        color: black;
+      }
+    }
+  }
+
+  .logout {
+    display: flex;
+    gap: 1rem;
+
+    a, button {
+      font-family: monospace;
+      border: none;
+      background-color: unset;
+      font-size: 16px;
+      cursor: pointer;
+      text-decoration: none;
+      color: black;
+    }
+
+    a {
+      line-height: 1.4;
+    }
+  }
+}

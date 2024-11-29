@@ -1,31 +1,36 @@
+{{ define "layout" }}
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/static/css/layout.css" />
   {{ template "css" }}
   <title>Nyusu</title>
 
 </head>
 
 <body>
-  <main>
-    <header>
+  <header>
+    <section>
       <h1><a href="/">Nyusu</a></h1>
       {{ if .Authenticated }}
       <div class="logout">
-        <a href="/add">Add Feed</a>
         <form action="/users/logout" method="post">
           <button type="submit">Logout</button>
         </form>
       </div>
-      {{ else }}
-      <div class="hidden-right"></div>
       {{ end }}
-    </header>
-    <section>
-      <ul>
+    </section>
+    {{ if .Authenticated }}
+    <nav class="menu">
+      <ul role="navigation">
+        <li>
+          <a href="/add">
+            Add
+          </a>
+        </li>
         <li>
           <a href="/feeds">
             Feeds
@@ -37,9 +42,11 @@
           </a>
         </li>
       </ul>
-    </section>
-    {{ template "body" . }}
-  </main>
+    </nav>
+    {{ end }}
+  </header>
+  {{ template "body" . }}
 </body>
 
 </html>
+{{ end }}
