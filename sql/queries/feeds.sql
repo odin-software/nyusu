@@ -18,6 +18,11 @@ SET
 	updated_at = unixepoch()
 WHERE id = ?;
 
+-- name: GetFeedByUrl :one
+SELECT *
+FROM feeds
+WHERE url = ?;
+
 -- name: CreateFeed :one
 INSERT INTO feeds (name, url, description, image_url, image_text, language, user_id)
 VALUES (?, ?, ?, ?, ?, ?, ?)

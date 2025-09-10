@@ -38,7 +38,7 @@ func (cfg *APIConfig) CreateFeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	url := r.FormValue("rss")
-	rss, err := rss.DataFromFeed(url)
+	rssData, err := rss.DataFromFeed(url)
 	if err != nil {
 		http.Redirect(w, r, "/add?error=couldn't process url", http.StatusSeeOther)
 		return
@@ -49,20 +49,39 @@ func (cfg *APIConfig) CreateFeed(w http.ResponseWriter, r *http.Request) {
 		internalServerErrorHandler(w)
 		return
 	}
-	feed, err := cfg.DB.CreateFeed(cfg.ctx, database.CreateFeedParams{
-		Url:         url,
-		Name:        rss.Channel.Title,
-		Description: sql.NullString{String: rss.Channel.Description, Valid: true},
-		ImageUrl:    sql.NullString{String: rss.Channel.Image.Url, Valid: true},
-		ImageText:   sql.NullString{String: rss.Channel.Image.Title, Valid: true},
-		Language:    sql.NullString{String: rss.Channel.Language, Valid: true},
-		UserID:      user.ID,
-	})
+
+	existingFeed, err := cfg.DB.GetFeedByUrl(cfg.ctx, url)
+	var feed database.Feed
+
 	if err != nil {
-		log.Print(err)
-		internalServerErrorHandler(w)
+		// Feed doesn't exist, create a new one
+		feed, err = cfg.DB.CreateFeed(cfg.ctx, database.CreateFeedParams{
+			Url:         url,
+			Name:        rssData.Channel.Title,
+			Description: sql.NullString{String: rssData.Channel.Description, Valid: true},
+			ImageUrl:    sql.NullString{String: rssData.Channel.Image.Url, Valid: true},
+			ImageText:   sql.NullString{String: rssData.Channel.Image.Title, Valid: true},
+			Language:    sql.NullString{String: rssData.Channel.Language, Valid: true},
+			UserID:      user.ID,
+		})
+		if err != nil {
+			log.Print(err)
+			internalServerErrorHandler(w)
+			return
+		}
+	} else {
+		feed = existingFeed
+	}
+
+	_, err = cfg.DB.GetFeedFollows(cfg.ctx, database.GetFeedFollowsParams{
+		UserID: user.ID,
+		FeedID: feed.ID,
+	})
+	if err == nil {
+		http.Redirect(w, r, "/add?error=you're already following this feed", http.StatusSeeOther)
 		return
 	}
+
 	_, err = cfg.DB.CreateFeedFollows(cfg.ctx, database.CreateFeedFollowsParams{
 		UserID: user.ID,
 		FeedID: feed.ID,

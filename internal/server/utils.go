@@ -55,7 +55,7 @@ func GetPageSizeNumber(r *http.Request) (limit int64, offset int64) {
 	pn := q.Get("pageNumber")
 	pageSize, err := strconv.ParseInt(ps, 10, 64)
 	if err != nil {
-		pageSize = 22
+		pageSize = 20
 	}
 	pageNumber, err := strconv.ParseInt(pn, 10, 64)
 	if err != nil {

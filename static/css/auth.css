@@ -7,8 +7,3 @@ main {
   align-items: center;
   justify-content: center;
 }
-
-body {
-  display: flex;
-  justify-content: center;
-}

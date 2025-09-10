@@ -3,24 +3,24 @@
 {{ end }}
 
 {{ define "body" }}
-<section class="posts">
-  {{ if .Authenticated }}
-  <ul class="posts-list">
-    {{ if .Posts }}
-    {{ range .Posts }}
-    <li>
-      <a rel="noopener noreferrer" href="{{ .Url }}">{{ .Title }}</a>
-      <span>{{ .Name }}</span>
-      <span>{{ .PublishedAt | date }}</span>
-    </li>
-    {{ end }}
-    {{ else }}
-    <span>no posts</span>
-    {{ end }}
-  </ul>
+{{ if .Authenticated }}
+<ul class="posts-list">
+  {{ if .Posts }}
+  {{ range .Posts }}
+  <li>
+    <a rel="noopener noreferrer" href="{{ .Url }}">{{ .Title }}</a>
+    <span>{{ .Name }}</span>
+    <span>{{ .PublishedAt | date }}</span>
+  </li>
+  {{ end }}
   {{ else }}
+  <span>no posts</span>
+  {{ end }}
+</ul>
+{{ else }}
+<div class="regoptions">
   <a href="/login">Login</a>
   <a href="/register">Register</a>
-  {{ end }}
-</section>
+</div>
+{{ end }}
 {{ end }}

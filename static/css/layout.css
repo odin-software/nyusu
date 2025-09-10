@@ -1,9 +1,16 @@
+html {
+  display: grid;
+  justify-content: center;
+}
+
 body {
   display: grid;
   grid-template-rows: 2fr auto;
   font-family: monospace;
   font-size: 16px;
+  min-width: 23rem;
   max-width: 48rem;
+  margin: 0;
 }
 
 header {
@@ -11,8 +18,11 @@ header {
     display: grid;
     grid-template-columns: 2fr auto;
     align-items: center;
+    padding: 0 1rem;
 
     h1 {
+      text-align: center;
+
       a {
         text-decoration: none;
         color: black;
@@ -24,11 +34,13 @@ header {
     ul {
       display: grid;
       list-style: none;
-      padding: 0;
+      padding: 1rem 0;
+      margin: 0;
       grid-template-columns: auto auto auto;
       justify-content: space-evenly;
       font-size: 1rem;
-      margin: 0 0 1rem 0;
+      border-top: 1px solid #808080;
+      border-bottom: 1px solid #808080;
 
       a {
         background-color: aqua;
@@ -37,11 +49,12 @@ header {
     }
   }
 
-  .logout {
+  form {
     display: flex;
     gap: 1rem;
 
-    a, button {
+    a,
+    button {
       font-family: monospace;
       border: none;
       background-color: unset;

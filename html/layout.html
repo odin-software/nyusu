@@ -16,11 +16,9 @@
     <section>
       <h1><a href="/">Nyusu</a></h1>
       {{ if .Authenticated }}
-      <div class="logout">
-        <form action="/users/logout" method="post">
-          <button type="submit">Logout</button>
-        </form>
-      </div>
+      <form action="/users/logout" method="post">
+        <button type="submit">Logout</button>
+      </form>
       {{ end }}
     </section>
     {{ if .Authenticated }}

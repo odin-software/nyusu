@@ -1,18 +1,30 @@
-.posts {
-  display: flex;
-  gap: 2rem;
+.regoptions {
+  display: grid;
+  justify-content: center;
+  gap: 0.8rem;
+
+  a {
+    text-align: center;
+  }
 }
 
 .posts-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
   list-style: none;
-  padding: 0 0rem;
-  margin: 0;
+  padding: 0 1rem;
   gap: 1rem;
 
   li {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+  }
+}
+
+.add {
+  margin: 1rem;
+  padding: 0 .5em;
+
+  form {
+    display: grid;
+    gap: 1rem;
   }
 }

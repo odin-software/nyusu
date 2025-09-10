@@ -29,8 +29,9 @@ type IndexData struct {
 }
 
 type AuthPageData struct {
-	Register bool
-	Error    string
+	Authenticated bool
+	Register      bool
+	Error         string
 }
 
 type AddFeedData struct {
@@ -102,7 +103,7 @@ func (cfg *APIConfig) GetLogin(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	t, err := template.ParseFiles("html/auth.html")
+	t, err := template.New("layout").ParseFiles("html/layout.html", "html/auth.html")
 	if err != nil {
 		panic(err)
 	}
@@ -123,7 +124,7 @@ func (cfg *APIConfig) GetRegister(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	t, err := template.ParseFiles("html/auth.html")
+	t, err := template.New("layout").ParseFiles("html/layout.html", "html/auth.html")
 	if err != nil {
 		panic(err)
 	}

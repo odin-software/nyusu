@@ -40,7 +40,15 @@ type Rss struct {
 }
 
 func DataFromFeed(url string) (Rss, error) {
-	resp, err := http.Get(url)
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return Rss{}, errors.New("couldn't create request")
+	}
+	// Set a proper User-Agent to avoid being blocked by servers
+	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; Nyusu RSS Reader/1.0)")
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return Rss{}, errors.New("couldn't fetch the url")
 	}
