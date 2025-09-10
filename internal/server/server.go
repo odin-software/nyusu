@@ -16,23 +16,18 @@ import (
 )
 
 type Environment struct {
-	DBUrl     string
-	Engine    string
-	Port      string
-	Scrapper  int
-	SecretKey []byte
-}
-
-type SessionManagement struct {
-	Sessions map[string]bool
-	Mutex    *sync.Mutex
+	DBUrl       string
+	Engine      string
+	Port        string
+	Scrapper    int
+	SecretKey   []byte
+	Environment string
 }
 
 type APIConfig struct {
-	ctx        context.Context
-	SessionMng SessionManagement
-	DB         *database.Queries
-	Env        Environment
+	ctx context.Context
+	DB  *database.Queries
+	Env Environment
 }
 
 type AuthHandler func(http.ResponseWriter, *http.Request, database.User)
@@ -46,12 +41,18 @@ func NewConfig() APIConfig {
 	if err != nil {
 		scrapper = 20
 	}
+	environment := os.Getenv("ENVIRONMENT")
+	if environment == "" {
+		environment = "development"
+	}
+
 	env := Environment{
-		DBUrl:     os.Getenv("DB_URL"),
-		Engine:    os.Getenv("DB_ENGINE"),
-		Port:      fmt.Sprintf(":%s", os.Getenv("PORT")),
-		SecretKey: []byte(os.Getenv("JWT_KEY")),
-		Scrapper:  scrapper,
+		DBUrl:       os.Getenv("DB_URL"),
+		Engine:      os.Getenv("DB_ENGINE"),
+		Port:        fmt.Sprintf(":%s", os.Getenv("PORT")),
+		SecretKey:   []byte(os.Getenv("JWT_KEY")),
+		Scrapper:    scrapper,
+		Environment: environment,
 	}
 
 	ctx := context.Background()
@@ -61,18 +62,10 @@ func NewConfig() APIConfig {
 	}
 	dbQueries := database.New(db)
 
-	sessions := make(map[string]bool)
-	sessionMutex := sync.Mutex{}
-	sessionMng := SessionManagement{
-		Sessions: sessions,
-		Mutex:    &sessionMutex,
-	}
-
 	return APIConfig{
-		ctx:        ctx,
-		DB:         dbQueries,
-		Env:        env,
-		SessionMng: sessionMng,
+		ctx: ctx,
+		DB:  dbQueries,
+		Env: env,
 	}
 }
 

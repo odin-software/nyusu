@@ -44,6 +44,14 @@ type Post struct {
 	Author      string         `json:"author"`
 }
 
+type Session struct {
+	ID        int64  `json:"id"`
+	Token     string `json:"token"`
+	UserID    int64  `json:"user_id"`
+	CreatedAt int64  `json:"created_at"`
+	ExpiresAt int64  `json:"expires_at"`
+}
+
 type User struct {
 	ID        int64  `json:"id"`
 	Name      string `json:"name"`
