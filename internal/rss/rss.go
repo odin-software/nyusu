@@ -61,8 +61,13 @@ func DataFromFeed(url string) (Rss, error) {
 	}
 	err = xml.Unmarshal(data, &rssFeed)
 	if err != nil {
-		log.Print(err)
-		return Rss{}, errors.New("couldn't unmarshall the data into an RSS type")
+		// Check if we got HTML instead of RSS
+		dataStr := string(data)
+		if len(dataStr) > 100 {
+			dataStr = dataStr[:100] + "..."
+		}
+		log.Printf("RSS parsing failed for URL %s. Response content: %s", url, dataStr)
+		return Rss{}, errors.New("couldn't unmarshall the data into an RSS type - server may be returning HTML instead of RSS")
 	}
 	return *rssFeed, nil
 }

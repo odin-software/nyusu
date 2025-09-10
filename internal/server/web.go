@@ -68,9 +68,18 @@ func (cfg *APIConfig) GetHome(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+
+	sessionData, err := cfg.DB.GetSessionByToken(cfg.ctx, cookie.Value)
+	if err != nil {
+		t.Execute(w, IndexData{
+			Authenticated: false,
+		})
+		return
+	}
+
 	limit, offset := GetPageSizeNumber(r)
 	posts, err := cfg.DB.GetPostsByUser(cfg.ctx, database.GetPostsByUserParams{
-		Email:  cookie.Value,
+		Email:  sessionData.Email,
 		Limit:  limit,
 		Offset: offset,
 	})
@@ -166,9 +175,16 @@ func (cfg *APIConfig) GetAllFeeds(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
+
+	sessionData, err := cfg.DB.GetSessionByToken(cfg.ctx, cookie.Value)
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
 	limit, offset := GetPageSizeNumber(r)
 	feeds, err := cfg.DB.GetAllFeedFollowsByEmail(cfg.ctx, database.GetAllFeedFollowsByEmailParams{
-		Email:  cookie.Value,
+		Email:  sessionData.Email,
 		Limit:  limit,
 		Offset: offset,
 	})
@@ -204,13 +220,20 @@ func (cfg *APIConfig) GetFeedPosts(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
+
+	sessionData, err := cfg.DB.GetSessionByToken(cfg.ctx, cookie.Value)
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
 	feedId, err := strconv.Atoi(feed)
 	if err != nil {
 		http.Redirect(w, r, "/", http.StatusMovedPermanently)
 	}
 	limit, offset := GetPageSizeNumber(r)
 	posts, err := cfg.DB.GetPostsByUserAndFeed(cfg.ctx, database.GetPostsByUserAndFeedParams{
-		Email:  cookie.Value,
+		Email:  sessionData.Email,
 		ID:     int64(feedId),
 		Limit:  limit,
 		Offset: offset,

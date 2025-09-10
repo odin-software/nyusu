@@ -37,17 +37,26 @@ func (cfg *APIConfig) CreateFeed(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
-	url := r.FormValue("rss")
+	url := SanitizeInput(r.FormValue("rss"))
+	if url == "" {
+		http.Redirect(w, r, "/add?error=RSS URL is required", http.StatusSeeOther)
+		return
+	}
+
 	rssData, err := rss.DataFromFeed(url)
 	if err != nil {
 		http.Redirect(w, r, "/add?error=couldn't process url", http.StatusSeeOther)
 		return
 	}
-	user, err := cfg.DB.GetUserByEmail(cfg.ctx, cookie.Value)
+	sessionData, err := cfg.DB.GetSessionByToken(cfg.ctx, cookie.Value)
 	if err != nil {
-		log.Print(err)
-		internalServerErrorHandler(w)
+		log.Print("Invalid session:", err)
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
+	}
+
+	user := database.User{
+		ID:        sessionData.ID_2,
 	}
 
 	existingFeed, err := cfg.DB.GetFeedByUrl(cfg.ctx, url)

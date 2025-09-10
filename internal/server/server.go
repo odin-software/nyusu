@@ -16,12 +16,13 @@ import (
 )
 
 type Environment struct {
-	DBUrl       string
-	Engine      string
-	Port        string
-	Scrapper    int
-	SecretKey   []byte
-	Environment string
+	DBUrl         string
+	Engine        string
+	Port          string
+	Scrapper      int
+	SecretKey     []byte
+	Environment   string
+	ProductionURL string
 }
 
 type APIConfig struct {
@@ -46,13 +47,19 @@ func NewConfig() APIConfig {
 		environment = "development"
 	}
 
+	productionURL := os.Getenv("PRODUCTION_URL")
+	if productionURL == "" {
+		productionURL = "https://nyusu.do"
+	}
+
 	env := Environment{
-		DBUrl:       os.Getenv("DB_URL"),
-		Engine:      os.Getenv("DB_ENGINE"),
-		Port:        fmt.Sprintf(":%s", os.Getenv("PORT")),
-		SecretKey:   []byte(os.Getenv("JWT_KEY")),
-		Scrapper:    scrapper,
-		Environment: environment,
+		DBUrl:         os.Getenv("DB_URL"),
+		Engine:        os.Getenv("DB_ENGINE"),
+		Port:          fmt.Sprintf(":%s", os.Getenv("PORT")),
+		SecretKey:     []byte(os.Getenv("JWT_KEY")),
+		Scrapper:      scrapper,
+		Environment:   environment,
+		ProductionURL: productionURL,
 	}
 
 	ctx := context.Background()
@@ -95,7 +102,8 @@ func (cfg *APIConfig) FetchPastFeeds(limit int) {
 			defer wg.Done()
 			rss, err := rss.DataFromFeed(url)
 			if err != nil {
-				fmt.Println((err.Error()))
+				log.Printf("Failed to fetch RSS feed (ID: %d, URL: %s): %s", id, url, err.Error())
+				return // Skip processing if RSS fetch failed
 			}
 			err = cfg.DB.MarkFeedFetched(cfg.ctx, id)
 			if err != nil {
@@ -126,13 +134,14 @@ func (cfg *APIConfig) FetchPastFeeds(limit int) {
 		}(f.ID, f.Url)
 	}
 	wg.Wait()
-	log.Println("Done")
+	log.Println("Finished fetching feeds")
 }
 
 func (cfg *APIConfig) FetchOneFeedSync(feedId int64, url string) {
 	rss, err := rss.DataFromFeed(url)
 	if err != nil {
-		fmt.Println((err.Error()))
+		log.Printf("Failed to fetch RSS feed (ID: %d, URL: %s): %s", feedId, url, err.Error())
+		return // Skip processing if RSS fetch failed
 	}
 	err = cfg.DB.MarkFeedFetched(cfg.ctx, feedId)
 	if err != nil {

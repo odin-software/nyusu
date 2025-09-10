@@ -5,7 +5,10 @@ import (
 	"encoding/hex"
 	"log"
 	"net/http"
+	"regexp"
+	"strings"
 	"time"
+	"unicode"
 
 	"github.com/odin-software/nyusu/internal/database"
 	"golang.org/x/crypto/bcrypt"
@@ -18,8 +21,15 @@ type TokenObj struct {
 }
 
 func (cfg *APIConfig) LoginUser(w http.ResponseWriter, r *http.Request) {
-	email := r.FormValue("email")
+	email := SanitizeInput(r.FormValue("email"))
 	password := r.FormValue("password")
+
+	// Basic validation
+	if email == "" || password == "" {
+		http.Redirect(w, r, `/login?error=email and password are required`, http.StatusSeeOther)
+		return
+	}
+
 	user, err := cfg.DB.GetUserByEmail(cfg.ctx, email)
 	if err != nil {
 		http.Redirect(w, r, `/login?error=invalid credentials`, http.StatusSeeOther)
@@ -91,9 +101,20 @@ func (cfg *APIConfig) LogoutUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cfg *APIConfig) RegisterUser(w http.ResponseWriter, r *http.Request) {
-	email := r.FormValue("email")
+	email := SanitizeInput(r.FormValue("email"))
 	password := r.FormValue("password")
 	confirmPassword := r.FormValue("confirmPassword")
+
+	if !ValidateEmail(email) {
+		http.Redirect(w, r, `/register?error=invalid email format`, http.StatusSeeOther)
+		return
+	}
+
+	if valid, errMsg := ValidatePassword(password); !valid {
+		http.Redirect(w, r, `/register?error=`+errMsg, http.StatusSeeOther)
+		return
+	}
+
 	if password != confirmPassword {
 		http.Redirect(w, r, `/register?error=passwords do not match`, http.StatusSeeOther)
 		return
@@ -193,12 +214,19 @@ func (cfg *APIConfig) MiddlewareAuth(handler AuthHandler) http.HandlerFunc {
 	}
 }
 
-func CORS(next http.HandlerFunc) http.HandlerFunc {
+// CORS returns a CORS middleware configured for the current environment
+func (cfg *APIConfig) CORS(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Access-Control-Allow-Origin", "*")
-		w.Header().Add("Access-Control-Allow-Credentials", "true")
-		w.Header().Add("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
-		w.Header().Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		allowOrigin, allowCredentials := cfg.GetCORSSettings()
+
+		w.Header().Set("Access-Control-Allow-Origin", allowOrigin)
+
+		if allowCredentials {
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+		}
+
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 
 		if r.Method == "OPTIONS" {
 			http.Error(w, "No Content", http.StatusNoContent)
@@ -209,11 +237,18 @@ func CORS(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func OPTIONS(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Access-Control-Allow-Origin", "*")
-	w.Header().Add("Access-Control-Allow-Credentials", "true")
-	w.Header().Add("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
-	w.Header().Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+func (cfg *APIConfig) OPTIONS(w http.ResponseWriter, r *http.Request) {
+	allowOrigin, allowCredentials := cfg.GetCORSSettings()
+
+	w.Header().Set("Access-Control-Allow-Origin", allowOrigin)
+
+	if allowCredentials {
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+	}
+
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+
 	http.Error(w, "No Content", http.StatusNoContent)
 }
 
@@ -225,6 +260,69 @@ func HashPassword(password string) (string, error) {
 func CheckPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
+}
+
+// ValidateEmail checks if email format is valid
+func ValidateEmail(email string) bool {
+	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	return emailRegex.MatchString(email)
+}
+
+// ValidatePassword checks password strength requirements
+func ValidatePassword(password string) (bool, string) {
+	if len(password) < 8 {
+		return false, "password must be at least 8 characters long"
+	}
+
+	if len(password) > 128 {
+		return false, "password must be less than 128 characters long"
+	}
+
+	var hasUpper, hasLower, hasNumber, hasSpecial bool
+
+	for _, char := range password {
+		switch {
+		case unicode.IsUpper(char):
+			hasUpper = true
+		case unicode.IsLower(char):
+			hasLower = true
+		case unicode.IsDigit(char):
+			hasNumber = true
+		case unicode.IsPunct(char) || unicode.IsSymbol(char):
+			hasSpecial = true
+		}
+	}
+
+	if !hasUpper {
+		return false, "password must contain at least one uppercase letter"
+	}
+	if !hasLower {
+		return false, "password must contain at least one lowercase letter"
+	}
+	if !hasNumber {
+		return false, "password must contain at least one number"
+	}
+	if !hasSpecial {
+		return false, "password must contain at least one special character"
+	}
+
+	return true, ""
+}
+
+func SanitizeInput(input string) string {
+	input = strings.TrimSpace(input)
+
+	input = strings.ReplaceAll(input, "\x00", "")
+
+	var result strings.Builder
+	for _, char := range input {
+		if unicode.IsControl(char) && char != '\n' && char != '\t' {
+			continue
+		}
+		result.WriteRune(char)
+	}
+
+	return result.String()
 }
 
 func GenerateSecureToken() (string, error) {
@@ -240,6 +338,14 @@ func (cfg *APIConfig) GetSecureCookieSettings() (secure bool, sameSite http.Same
 		return true, http.SameSiteStrictMode
 	}
 	return false, http.SameSiteLaxMode
+}
+
+// GetCORSSettings returns appropriate CORS settings based on environment
+func (cfg *APIConfig) GetCORSSettings() (allowOrigin string, allowCredentials bool) {
+	if cfg.Env.Environment == "production" {
+		return cfg.Env.ProductionURL, true
+	}
+	return "http://localhost:8888", true
 }
 
 func (cfg *APIConfig) CleanupExpiredSessions() {

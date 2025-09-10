@@ -1,3 +1,5 @@
 .env
 nyusu
 tmp/
+
+./nyusu.db

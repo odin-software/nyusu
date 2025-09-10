@@ -32,13 +32,13 @@ func main() {
 	mux.HandleFunc("POST /users/register", cfg.RegisterUser)
 	mux.HandleFunc("POST /feed", cfg.CreateFeed)
 
-	mux.HandleFunc("GET /v1/feeds", server.CORS(cfg.GetAllFeeds2))                                      // get
-	mux.HandleFunc("GET /v1/feed_follows", server.CORS(cfg.MiddlewareAuth(cfg.GetFeedFollowsFromUser))) // get
+	mux.HandleFunc("GET /v1/feeds", cfg.CORS(cfg.GetAllFeeds2))                                      // get
+	mux.HandleFunc("GET /v1/feed_follows", cfg.CORS(cfg.MiddlewareAuth(cfg.GetFeedFollowsFromUser))) // get
 	mux.HandleFunc("DELETE /v1/feed_follows/{feedFollowId}", cfg.DeleteFeedFollows)                     // delete
 
-	mux.HandleFunc("DELETE /v1/posts/bookmarks/{postId}", server.CORS(cfg.MiddlewareAuth(cfg.UnbookmarkPost))) // delete
-	mux.HandleFunc("POST /v1/posts/bookmarks/{postId}", server.CORS(cfg.MiddlewareAuth(cfg.BookmarkPost)))     // post
-	mux.HandleFunc("GET /v1/posts/bookmarks", server.CORS(cfg.MiddlewareAuth(cfg.GetBookmarkedPosts)))         // get
+	mux.HandleFunc("DELETE /v1/posts/bookmarks/{postId}", cfg.CORS(cfg.MiddlewareAuth(cfg.UnbookmarkPost))) // delete
+	mux.HandleFunc("POST /v1/posts/bookmarks/{postId}", cfg.CORS(cfg.MiddlewareAuth(cfg.BookmarkPost)))     // post
+	mux.HandleFunc("GET /v1/posts/bookmarks", cfg.CORS(cfg.MiddlewareAuth(cfg.GetBookmarkedPosts)))         // get
 
 	go func() {
 		for range ticker.C {
