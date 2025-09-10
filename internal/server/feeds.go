@@ -165,6 +165,23 @@ func (cfg *APIConfig) DeleteFeedFollows(w http.ResponseWriter, r *http.Request) 
 	respondOk(w)
 }
 
+func (cfg *APIConfig) UnsubscribeFeed(w http.ResponseWriter, r *http.Request) {
+	feedFollowId := r.PathValue("feedFollowId")
+	id, err := strconv.Atoi(feedFollowId)
+	if err != nil {
+		log.Print(err)
+		http.Redirect(w, r, "/feeds?error=invalid feed follow ID", http.StatusSeeOther)
+		return
+	}
+	err = cfg.DB.DeleteFeedFollows(cfg.ctx, int64(id))
+	if err != nil {
+		log.Print(err)
+		http.Redirect(w, r, "/feeds?error=failed to unsubscribe from feed", http.StatusSeeOther)
+		return
+	}
+	http.Redirect(w, r, "/feeds", http.StatusSeeOther)
+}
+
 func GetFeedId(r *http.Request) (int64, error) {
 	q := r.URL.Query()
 	fi := q.Get("feedId")

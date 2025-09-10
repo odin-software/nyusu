@@ -25,12 +25,14 @@ func main() {
 	mux.HandleFunc("GET /add", cfg.GetAddFeed)
 	mux.HandleFunc("GET /feeds", cfg.GetAllFeeds)
 	mux.HandleFunc("GET /feeds/{feedId}", cfg.GetFeedPosts)
+	mux.HandleFunc("GET /bookmarks", cfg.GetBookmarks)
 
 	// Action endpoints.
 	mux.HandleFunc("POST /users/login", cfg.LoginUser)
 	mux.HandleFunc("POST /users/logout", cfg.LogoutUser)
 	mux.HandleFunc("POST /users/register", cfg.RegisterUser)
 	mux.HandleFunc("POST /feed", cfg.CreateFeed)
+	mux.HandleFunc("POST /unsubscribe/{feedFollowId}", cfg.UnsubscribeFeed)
 
 	mux.HandleFunc("GET /v1/feeds", cfg.CORS(cfg.GetAllFeeds2))                                      // get
 	mux.HandleFunc("GET /v1/feed_follows", cfg.CORS(cfg.MiddlewareAuth(cfg.GetFeedFollowsFromUser))) // get

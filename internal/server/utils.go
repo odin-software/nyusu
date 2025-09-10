@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/odin-software/nyusu/internal/database"
 )
 
 var timeFormats = []string{
@@ -74,4 +76,48 @@ func ParseTime(value string) (time.Time, error) {
 		}
 	}
 	return time.Time{}, errors.New("couldn't parse the time value")
+}
+
+type AuthResult struct {
+	IsAuthenticated bool
+	SessionData     *database.GetSessionByTokenRow
+}
+
+type WebHandler func(http.ResponseWriter, *http.Request, AuthResult)
+
+func (cfg *APIConfig) MiddlewareWebAuth(handler WebHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		result := AuthResult{IsAuthenticated: false}
+
+		cookie, err := r.Cookie(SessionCookieName)
+		if err == nil {
+			sessionData, err := cfg.DB.GetSessionByToken(cfg.ctx, cookie.Value)
+			if err == nil {
+				result.IsAuthenticated = true
+				result.SessionData = &sessionData
+			}
+		}
+
+		handler(w, r, result)
+	}
+}
+
+func (cfg *APIConfig) RequireAuth(handler WebHandler) http.HandlerFunc {
+	return cfg.MiddlewareWebAuth(func(w http.ResponseWriter, r *http.Request, auth AuthResult) {
+		if !auth.IsAuthenticated {
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+		handler(w, r, auth)
+	})
+}
+
+func (cfg *APIConfig) RedirectIfAuth(handler WebHandler) http.HandlerFunc {
+	return cfg.MiddlewareWebAuth(func(w http.ResponseWriter, r *http.Request, auth AuthResult) {
+		if auth.IsAuthenticated {
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
+		handler(w, r, auth)
+	})
 }

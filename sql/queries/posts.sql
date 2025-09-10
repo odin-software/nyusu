@@ -50,3 +50,29 @@ VALUES (?, ?);
 -- name: UnbookmarkPost :exec
 DELETE FROM users_bookmarks
 WHERE user_id = ? AND post_id = ?;
+
+-- name: GetPostsByUserWithBookmarks :many
+SELECT DISTINCT p.id, f.name, p.title, p.author, p.url, p.published_at,
+       CASE WHEN ub.post_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked
+FROM feed_follows ff
+INNER JOIN users u ON ff.user_id = u.id
+INNER JOIN feeds f ON ff.feed_id = f.id
+INNER JOIN posts p ON p.feed_id = f.id
+LEFT JOIN users_bookmarks ub ON ub.post_id = p.id AND ub.user_id = u.id
+WHERE u.email = ?
+ORDER BY p.published_at DESC
+LIMIT ?
+OFFSET ?;
+
+-- name: GetPostsByUserAndFeedWithBookmarks :many
+SELECT p.id, p.title, f.name, p.url, p.published_at,
+       CASE WHEN ub.post_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked
+FROM feed_follows ff
+INNER JOIN feeds f ON ff.feed_id = f.id
+INNER JOIN posts p ON p.feed_id = f.id
+INNER JOIN users u ON ff.user_id = u.id
+LEFT JOIN users_bookmarks ub ON ub.post_id = p.id AND ub.user_id = u.id
+WHERE u.email = ? AND f.id = ?
+ORDER BY p.published_at DESC
+LIMIT ?
+OFFSET ?;

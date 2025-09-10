@@ -4,55 +4,25 @@
 
 {{ define "body" }}
 <section class="posts">
+  <h2>Bookmarked Posts</h2>
   <ul class="posts-list">
     {{ if .Posts }}
     {{ range .Posts }}
     <li>
       <a rel="noopener noreferrer" href="{{ .Url }}">{{ .Title }}</a>
-      <span>{{ .Name }}</span>
       <span>{{ .PublishedAt | date }}</span>
-      {{ if eq .IsBookmarked 1 }}
-      <button class="unbookmark-btn" data-post-id="{{ .ID }}">Unbookmark</button>
-      {{ else }}
-      <button class="bookmark-btn" data-post-id="{{ .ID }}">Bookmark</button>
-      {{ end }}
+      <button class="unbookmark-btn" data-post-id="{{ .ID }}">Remove Bookmark</button>
     </li>
     {{ end }}
     {{ else }}
-    <span>no feeds</span>
+    <span>No bookmarked posts</span>
     {{ end }}
   </ul>
 </section>
 
 <script>
   document.addEventListener('DOMContentLoaded', function () {
-    const bookmarkButtons = document.querySelectorAll('.bookmark-btn');
     const unbookmarkButtons = document.querySelectorAll('.unbookmark-btn');
-
-    bookmarkButtons.forEach(button => {
-      button.addEventListener('click', async function () {
-        const postId = this.getAttribute('data-post-id');
-
-        try {
-          const response = await fetch(`/v1/posts/bookmarks/${postId}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            }
-          });
-
-          if (response.ok) {
-            this.textContent = 'Unbookmark';
-            this.className = 'unbookmark-btn';
-          } else {
-            alert('Failed to bookmark post');
-          }
-        } catch (error) {
-          console.error('Error:', error);
-          alert('Failed to bookmark post');
-        }
-      });
-    });
 
     unbookmarkButtons.forEach(button => {
       button.addEventListener('click', async function () {
@@ -67,8 +37,8 @@
           });
 
           if (response.ok) {
-            this.textContent = 'Bookmark';
-            this.className = 'bookmark-btn';
+            // Remove the post from the UI
+            this.closest('li').remove();
           } else {
             alert('Failed to remove bookmark');
           }
