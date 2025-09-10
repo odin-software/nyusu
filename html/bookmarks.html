@@ -4,12 +4,12 @@
 
 {{ define "body" }}
 <section class="posts">
-  <h2>Bookmarked Posts</h2>
   <ul class="posts-list">
     {{ if .Posts }}
     {{ range .Posts }}
     <li>
       <a rel="noopener noreferrer" href="{{ .Url }}">{{ .Title }}</a>
+      <span>{{ .Name }}</span>
       <span>{{ .PublishedAt | date }}</span>
       <button class="unbookmark-btn" data-post-id="{{ .ID }}">Remove Bookmark</button>
     </li>

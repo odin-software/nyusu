@@ -3,3 +3,4 @@ nyusu
 tmp/
 
 nyusu.db
+.DS_Store

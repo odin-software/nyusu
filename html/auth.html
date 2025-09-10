@@ -3,34 +3,52 @@
 {{ end }}
 
 {{ define "body" }}
-<main>
-  <h1>{{ if .Register }} Register {{ else }} Log in {{ end }}</h1>
-  <form action={{ if .Register }}"/users/register"{{ else }}"/users/login"{{end}} method="post"
-    style="display: flex; flex-direction: column; gap: 1rem;">
-    <label for="email">Email</label>
-    <input name="email" type="text" required />
-    {{ if .Register }}
-    <label for="password">Password</label>
-    <input name="password" type="password" required />
-    <label for="confirmPassword">Confirm Password</label>
-    <input name="confirmPassword" type="password" required />
-    {{ if .Error }}
-    <span style="font-size: 12px; color: red;">
-      {{ .Error }}
-    </span>
-    {{end}}
-    {{ else }}
-    <label for="password">Password</label>
-    <input name="password" type="password" required />
-    {{ if .Error }}
-    <span style="font-size: 12px; color: red;">
-      {{ .Error }}
-    </span>
-    {{ end }}
-    {{ end }}
-    <button type="submit">
-      {{ if .Register }} Sign up {{ else }} Log in {{ end }}
-    </button>
-  </form>
-</main>
+<section class="auth">
+  <div class="auth-content">
+    <h2>{{ if .Register }} Create Account {{ else }} Welcome Back {{ end }}</h2>
+    <form action={{ if .Register }}"/users/register"{{ else }}"/users/login"{{end}} method="post">
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input id="email" name="email" type="email" required placeholder="your@email.com" autocomplete="email" />
+      </div>
+
+      {{ if .Register }}
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" required placeholder="Enter your password"
+          autocomplete="new-password" />
+      </div>
+      <div class="form-group">
+        <label for="confirmPassword">Confirm Password</label>
+        <input id="confirmPassword" name="confirmPassword" type="password" required placeholder="Confirm your password"
+          autocomplete="new-password" />
+      </div>
+      {{ else }}
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" required placeholder="Enter your password"
+          autocomplete="current-password" />
+      </div>
+      {{ end }}
+
+      {{ if .Error }}
+      <div class="error">
+        {{ .Error }}
+      </div>
+      {{ end }}
+
+      <button type="submit">
+        {{ if .Register }} Create Account {{ else }} Sign In {{ end }}
+      </button>
+    </form>
+
+    <div class="auth-switch">
+      {{ if .Register }}
+      Already have an account? <a href="/login">Sign in</a>
+      {{ else }}
+      Don't have an account? <a href="/register">Create one</a>
+      {{ end }}
+    </div>
+  </div>
+</section>
 {{ end }}

@@ -23,9 +23,31 @@
   {{ end }}
 </ul>
 {{ else }}
-<div class="regoptions">
-  <a href="/login">Login</a>
-  <a href="/register">Register</a>
+<div class="welcome-section">
+  <div class="welcome-content">
+    <h2>Welcome to Nyusu</h2>
+    <p>A simple and clean RSS feed reader that helps you stay up to date with your favorite content.</p>
+
+    <div class="features">
+      <div class="feature">
+        <h3>📰 Subscribe to Feeds</h3>
+        <p>Add your favorite RSS feeds and get all your content in one place</p>
+      </div>
+      <div class="feature">
+        <h3>🔖 Bookmark Posts</h3>
+        <p>Save interesting articles to read later</p>
+      </div>
+      <div class="feature">
+        <h3>📱 Mobile Friendly</h3>
+        <p>Clean interface that works great on all devices</p>
+      </div>
+    </div>
+
+    <div class="auth-buttons">
+      <a href="/register" class="btn-primary">Get Started</a>
+      <a href="/login" class="btn-secondary">Sign In</a>
+    </div>
+  </div>
 </div>
 {{ end }}
 

@@ -271,3 +271,22 @@ func (cfg *APIConfig) getBookmarks(w http.ResponseWriter, r *http.Request, auth 
 func (cfg *APIConfig) GetBookmarks(w http.ResponseWriter, r *http.Request) {
 	cfg.RequireAuth(cfg.getBookmarks)(w, r)
 }
+
+func (cfg *APIConfig) getAbout(w http.ResponseWriter, r *http.Request, auth AuthResult) {
+	t, err := template.ParseFiles("html/layout.html", "html/about.html")
+	if err != nil {
+		panic(err)
+	}
+	err = t.ExecuteTemplate(w, "layout", struct {
+		Authenticated bool
+	}{
+		Authenticated: auth.IsAuthenticated,
+	})
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (cfg *APIConfig) GetAbout(w http.ResponseWriter, r *http.Request) {
+	cfg.MiddlewareWebAuth(cfg.getAbout)(w, r)
+}

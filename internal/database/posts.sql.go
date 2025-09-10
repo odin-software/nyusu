@@ -66,9 +66,10 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (Post, e
 }
 
 const getBookmarkedPostsByDate = `-- name: GetBookmarkedPostsByDate :many
-SELECT DISTINCT p.id, p.title, p.url, p.published_at
+SELECT DISTINCT p.id, p.title, p.url, p.published_at, f.name
 FROM users_bookmarks ub
 INNER JOIN posts p ON p.id = ub.post_id
+INNER JOIN feeds f ON p.feed_id = f.id
 WHERE ub.user_id = ?
 ORDER BY ub.created_at DESC
 LIMIT ?
@@ -86,6 +87,7 @@ type GetBookmarkedPostsByDateRow struct {
 	Title       string `json:"title"`
 	Url         string `json:"url"`
 	PublishedAt int64  `json:"published_at"`
+	Name        string `json:"name"`
 }
 
 func (q *Queries) GetBookmarkedPostsByDate(ctx context.Context, arg GetBookmarkedPostsByDateParams) ([]GetBookmarkedPostsByDateRow, error) {
@@ -102,6 +104,7 @@ func (q *Queries) GetBookmarkedPostsByDate(ctx context.Context, arg GetBookmarke
 			&i.Title,
 			&i.Url,
 			&i.PublishedAt,
+			&i.Name,
 		); err != nil {
 			return nil, err
 		}

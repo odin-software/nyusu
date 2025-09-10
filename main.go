@@ -26,6 +26,7 @@ func main() {
 	mux.HandleFunc("GET /feeds", cfg.GetAllFeeds)
 	mux.HandleFunc("GET /feeds/{feedId}", cfg.GetFeedPosts)
 	mux.HandleFunc("GET /bookmarks", cfg.GetBookmarks)
+	mux.HandleFunc("GET /about", cfg.GetAbout)
 
 	// Action endpoints.
 	mux.HandleFunc("POST /users/login", cfg.LoginUser)
