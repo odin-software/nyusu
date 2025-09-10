@@ -40,7 +40,15 @@ type Rss struct {
 }
 
 func DataFromFeed(url string) (Rss, error) {
-	resp, err := http.Get(url)
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return Rss{}, errors.New("couldn't create request")
+	}
+	// Set a proper User-Agent to avoid being blocked by servers
+	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; Nyusu RSS Reader/1.0)")
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return Rss{}, errors.New("couldn't fetch the url")
 	}
@@ -53,8 +61,13 @@ func DataFromFeed(url string) (Rss, error) {
 	}
 	err = xml.Unmarshal(data, &rssFeed)
 	if err != nil {
-		log.Print(err)
-		return Rss{}, errors.New("couldn't unmarshall the data into an RSS type")
+		// Check if we got HTML instead of RSS
+		dataStr := string(data)
+		if len(dataStr) > 100 {
+			dataStr = dataStr[:100] + "..."
+		}
+		log.Printf("RSS parsing failed for URL %s. Response content: %s", url, dataStr)
+		return Rss{}, errors.New("couldn't unmarshall the data into an RSS type - server may be returning HTML instead of RSS")
 	}
 	return *rssFeed, nil
 }

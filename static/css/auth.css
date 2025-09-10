@@ -1,14 +1,142 @@
-main {
+.auth {
   display: flex;
-  font-family: monospace;
-  font-size: 16px;
-  max-width: 50em;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  padding: 2rem 1rem;
 }
 
-body {
-  display: flex;
-  justify-content: center;
+.auth-content {
+  background-color: #fafafa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.auth h2 {
+  font-family: monospace;
+  font-size: 1.5rem;
+  color: #333;
+  margin: 0 0 1.5rem 0;
+  text-align: center;
+}
+
+.auth form {
+  display: block;
+  width: 100%;
+}
+
+.auth .form-group {
+  display: block;
+  margin-bottom: 1.5rem;
+  width: 100%;
+}
+
+.auth .form-group label {
+  font-family: monospace;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #333;
+  display: block;
+  margin-bottom: 0.5rem;
+  width: 100%;
+  float: none;
+}
+
+.auth .form-group input[type="email"],
+.auth .form-group input[type="password"] {
+  font-family: monospace;
+  font-size: 1rem;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background-color: white;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+  display: block;
+  clear: both;
+}
+
+.auth .form-group input[type="email"]:focus,
+.auth .form-group input[type="password"]:focus {
+  outline: none;
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+}
+
+.auth button[type="submit"] {
+  font-family: monospace;
+  font-size: 1rem;
+  font-weight: bold;
+  padding: 0.75rem 1.5rem;
+  background-color: #0066cc;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  margin-top: 1rem;
+}
+
+.auth button[type="submit"]:hover {
+  background-color: #0052a3;
+  transform: translateY(-1px);
+}
+
+.auth button[type="submit"]:active {
+  transform: translateY(0);
+}
+
+.auth .error {
+  color: #d32f2f;
+  font-size: 0.9rem;
+  padding: 0.5rem;
+  background-color: #ffeaea;
+  border: 1px solid #ffcccb;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.auth-switch {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.auth-switch a {
+  color: #0066cc;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.auth-switch a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+  .auth {
+    padding: 1rem 0.5rem;
+  }
+
+  .auth-content {
+    padding: 1.5rem;
+    margin: 0 0.5rem;
+  }
+
+  .auth h2 {
+    font-size: 1.3rem;
+  }
+
+  .auth input[type="email"],
+  .auth input[type="password"],
+  .auth button[type="submit"] {
+    font-size: 0.9rem;
+    padding: 0.65rem;
+  }
 }

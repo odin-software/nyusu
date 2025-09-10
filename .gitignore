@@ -1,3 +1,7 @@
 .env
 nyusu
 tmp/
+
+nyusu.db
+.DS_Store
+useful.txt

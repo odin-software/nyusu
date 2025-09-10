@@ -16,23 +16,19 @@ import (
 )
 
 type Environment struct {
-	DBUrl     string
-	Engine    string
-	Port      string
-	Scrapper  int
-	SecretKey []byte
-}
-
-type SessionManagement struct {
-	Sessions map[string]bool
-	Mutex    *sync.Mutex
+	DBUrl         string
+	Engine        string
+	Port          string
+	Scrapper      int
+	SecretKey     []byte
+	Environment   string
+	ProductionURL string
 }
 
 type APIConfig struct {
-	ctx        context.Context
-	SessionMng SessionManagement
-	DB         *database.Queries
-	Env        Environment
+	ctx context.Context
+	DB  *database.Queries
+	Env Environment
 }
 
 type AuthHandler func(http.ResponseWriter, *http.Request, database.User)
@@ -46,12 +42,24 @@ func NewConfig() APIConfig {
 	if err != nil {
 		scrapper = 20
 	}
+	environment := os.Getenv("ENVIRONMENT")
+	if environment == "" {
+		environment = "development"
+	}
+
+	productionURL := os.Getenv("PRODUCTION_URL")
+	if productionURL == "" {
+		productionURL = "https://nyusu.do"
+	}
+
 	env := Environment{
-		DBUrl:     os.Getenv("DB_URL"),
-		Engine:    os.Getenv("DB_ENGINE"),
-		Port:      fmt.Sprintf(":%s", os.Getenv("PORT")),
-		SecretKey: []byte(os.Getenv("JWT_KEY")),
-		Scrapper:  scrapper,
+		DBUrl:         os.Getenv("DB_URL"),
+		Engine:        os.Getenv("DB_ENGINE"),
+		Port:          fmt.Sprintf(":%s", os.Getenv("PORT")),
+		SecretKey:     []byte(os.Getenv("JWT_KEY")),
+		Scrapper:      scrapper,
+		Environment:   environment,
+		ProductionURL: productionURL,
 	}
 
 	ctx := context.Background()
@@ -61,18 +69,10 @@ func NewConfig() APIConfig {
 	}
 	dbQueries := database.New(db)
 
-	sessions := make(map[string]bool)
-	sessionMutex := sync.Mutex{}
-	sessionMng := SessionManagement{
-		Sessions: sessions,
-		Mutex:    &sessionMutex,
-	}
-
 	return APIConfig{
-		ctx:        ctx,
-		DB:         dbQueries,
-		Env:        env,
-		SessionMng: sessionMng,
+		ctx: ctx,
+		DB:  dbQueries,
+		Env: env,
 	}
 }
 
@@ -102,7 +102,8 @@ func (cfg *APIConfig) FetchPastFeeds(limit int) {
 			defer wg.Done()
 			rss, err := rss.DataFromFeed(url)
 			if err != nil {
-				fmt.Println((err.Error()))
+				log.Printf("Failed to fetch RSS feed (ID: %d, URL: %s): %s", id, url, err.Error())
+				return // Skip processing if RSS fetch failed
 			}
 			err = cfg.DB.MarkFeedFetched(cfg.ctx, id)
 			if err != nil {
@@ -133,13 +134,14 @@ func (cfg *APIConfig) FetchPastFeeds(limit int) {
 		}(f.ID, f.Url)
 	}
 	wg.Wait()
-	log.Println("Done")
+	log.Println("Finished fetching feeds")
 }
 
 func (cfg *APIConfig) FetchOneFeedSync(feedId int64, url string) {
 	rss, err := rss.DataFromFeed(url)
 	if err != nil {
-		fmt.Println((err.Error()))
+		log.Printf("Failed to fetch RSS feed (ID: %d, URL: %s): %s", feedId, url, err.Error())
+		return // Skip processing if RSS fetch failed
 	}
 	err = cfg.DB.MarkFeedFetched(cfg.ctx, feedId)
 	if err != nil {

@@ -6,6 +6,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="/static/css/layout.css" />
+  <link rel="icon" href="/static/favicon.ico" sizes="any">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+
   {{ template "css" }}
   <title>Nyusu</title>
 
@@ -16,11 +19,9 @@
     <section>
       <h1><a href="/">Nyusu</a></h1>
       {{ if .Authenticated }}
-      <div class="logout">
-        <form action="/users/logout" method="post">
-          <button type="submit">Logout</button>
-        </form>
-      </div>
+      <form action="/users/logout" method="post">
+        <button type="submit">Logout</button>
+      </form>
       {{ end }}
     </section>
     {{ if .Authenticated }}
@@ -39,6 +40,11 @@
         <li>
           <a href="/bookmarks">
             Bookmarks
+          </a>
+        </li>
+        <li>
+          <a href="/about">
+            About
           </a>
         </li>
       </ul>

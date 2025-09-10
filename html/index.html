@@ -3,24 +3,108 @@
 {{ end }}
 
 {{ define "body" }}
-<section class="posts">
-  {{ if .Authenticated }}
-  <ul class="posts-list">
-    {{ if .Posts }}
-    {{ range .Posts }}
-    <li>
-      <a rel="noopener noreferrer" href="{{ .Url }}">{{ .Title }}</a>
-      <span>{{ .Name }}</span>
-      <span>{{ .PublishedAt | date }}</span>
-    </li>
-    {{ end }}
+{{ if .Authenticated }}
+<ul class="posts-list">
+  {{ if .Posts }}
+  {{ range .Posts }}
+  <li>
+    <a rel="noopener noreferrer" href="{{ .Url }}">{{ .Title }}</a>
+    <span>{{ .Name }}</span>
+    <span>{{ .PublishedAt | date }}</span>
+    {{ if eq .IsBookmarked 1 }}
+    <button class="unbookmark-btn" data-post-id="{{ .ID }}">Unbookmark</button>
     {{ else }}
-    <span>no posts</span>
+    <button class="bookmark-btn" data-post-id="{{ .ID }}">Bookmark</button>
     {{ end }}
-  </ul>
-  {{ else }}
-  <a href="/login">Login</a>
-  <a href="/register">Register</a>
+  </li>
   {{ end }}
-</section>
+  {{ else }}
+  <span>no posts</span>
+  {{ end }}
+</ul>
+{{ else }}
+<div class="welcome-section">
+  <div class="welcome-content">
+    <h2>Welcome to Nyusu</h2>
+    <p>A simple and clean RSS feed reader that helps you stay up to date with your favorite content.</p>
+
+    <div class="features">
+      <div class="feature">
+        <h3>📰 Subscribe to Feeds</h3>
+        <p>Add your favorite RSS feeds and get all your content in one place</p>
+      </div>
+      <div class="feature">
+        <h3>🔖 Bookmark Posts</h3>
+        <p>Save interesting articles to read later</p>
+      </div>
+      <div class="feature">
+        <h3>📱 Mobile Friendly</h3>
+        <p>Clean interface that works great on all devices</p>
+      </div>
+    </div>
+
+    <div class="auth-buttons">
+      <a href="/register" class="btn-primary">Get Started</a>
+      <a href="/login" class="btn-secondary">Sign In</a>
+    </div>
+  </div>
+</div>
+{{ end }}
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const bookmarkButtons = document.querySelectorAll('.bookmark-btn');
+    const unbookmarkButtons = document.querySelectorAll('.unbookmark-btn');
+
+    bookmarkButtons.forEach(button => {
+      button.addEventListener('click', async function () {
+        const postId = this.getAttribute('data-post-id');
+
+        try {
+          const response = await fetch(`/v1/posts/bookmarks/${postId}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          });
+
+          if (response.ok) {
+            this.textContent = 'Unbookmark';
+            this.className = 'unbookmark-btn';
+          } else {
+            alert('Failed to bookmark post');
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          alert('Failed to bookmark post');
+        }
+      });
+    });
+
+    unbookmarkButtons.forEach(button => {
+      button.addEventListener('click', async function () {
+        const postId = this.getAttribute('data-post-id');
+
+        try {
+          const response = await fetch(`/v1/posts/bookmarks/${postId}`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          });
+
+          if (response.ok) {
+            this.textContent = 'Bookmark';
+            this.className = 'bookmark-btn';
+          } else {
+            alert('Failed to remove bookmark');
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          alert('Failed to remove bookmark');
+        }
+      });
+    });
+  });
+</script>
 {{ end }}
