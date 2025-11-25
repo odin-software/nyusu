@@ -19,6 +19,21 @@ type Entry struct {
 	Author      string `xml:"author"`
 }
 
+type AtomEntry struct {
+	Text      string `xml:",chardata"`
+	Title     string `xml:"title"`
+	Link      struct {
+		Href string `xml:"href,attr"`
+	} `xml:"link"`
+	Summary   string `xml:"summary"`
+	Content   string `xml:"content"`
+	Published string `xml:"published"`
+	Updated   string `xml:"updated"`
+	Author    struct {
+		Name string `xml:"name"`
+	} `xml:"author"`
+}
+
 type Image struct {
 	Url   string `xml:"url"`
 	Title string `xml:"title"`
@@ -39,6 +54,18 @@ type Rss struct {
 	} `xml:"channel"`
 }
 
+type AtomFeed struct {
+	XMLName  xml.Name    `xml:"feed"`
+	Text     string      `xml:",chardata"`
+	Title    string      `xml:"title"`
+	Subtitle string      `xml:"subtitle"`
+	Link     []struct {
+		Href string `xml:"href,attr"`
+		Rel  string `xml:"rel,attr"`
+	} `xml:"link"`
+	Entries []AtomEntry `xml:"entry"`
+}
+
 func DataFromFeed(url string) (Rss, error) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
@@ -53,21 +80,61 @@ func DataFromFeed(url string) (Rss, error) {
 		return Rss{}, errors.New("couldn't fetch the url")
 	}
 	defer resp.Body.Close()
-	var rssFeed *Rss
+
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Print(err)
 		return Rss{}, errors.New("couldn't read the request body")
 	}
+
+	// Try RSS first
+	var rssFeed *Rss
 	err = xml.Unmarshal(data, &rssFeed)
-	if err != nil {
-		// Check if we got HTML instead of RSS
-		dataStr := string(data)
-		if len(dataStr) > 100 {
-			dataStr = dataStr[:100] + "..."
-		}
-		log.Printf("RSS parsing failed for URL %s. Response content: %s", url, dataStr)
-		return Rss{}, errors.New("couldn't unmarshall the data into an RSS type - server may be returning HTML instead of RSS")
+	if err == nil {
+		return *rssFeed, nil
 	}
-	return *rssFeed, nil
+
+	// Try Atom feed
+	var atomFeed *AtomFeed
+	err = xml.Unmarshal(data, &atomFeed)
+	if err == nil {
+		// Convert Atom to RSS format
+		rss := Rss{
+			XMLName: xml.Name{Local: "rss"},
+			Version: "2.0",
+		}
+		rss.Channel.Title = atomFeed.Title
+		rss.Channel.Description = atomFeed.Subtitle
+
+		// Find the alternate link
+		for _, link := range atomFeed.Link {
+			if link.Rel == "alternate" {
+				rss.Channel.Link = link.Href
+				break
+			}
+		}
+
+		// Convert entries to items
+		for _, entry := range atomFeed.Entries {
+			item := Entry{
+				Title:       entry.Title,
+				Url:         entry.Link.Href,
+				Description: entry.Summary,
+				Content:     entry.Content,
+				Published:   entry.Published,
+				Author:      entry.Author.Name,
+			}
+			rss.Channel.Items = append(rss.Channel.Items, item)
+		}
+
+		return rss, nil
+	}
+
+	// Neither RSS nor Atom worked
+	dataStr := string(data)
+	if len(dataStr) > 100 {
+		dataStr = dataStr[:100] + "..."
+	}
+	log.Printf("Feed parsing failed for URL %s. Response content: %s", url, dataStr)
+	return Rss{}, errors.New("couldn't parse feed - not a valid RSS or Atom feed")
 }
