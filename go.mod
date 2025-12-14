@@ -1,12 +1,12 @@
 module github.com/odin-software/nyusu
 
-go 1.23.0
+go 1.24.0
 
 toolchain go1.24.2
 
 require (
 	github.com/joho/godotenv v1.5.1
-	golang.org/x/crypto v0.40.0
+	golang.org/x/crypto v0.45.0
 )
 
 require (
