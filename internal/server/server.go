@@ -13,14 +13,13 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/odin-software/nyusu/internal/database"
 	"github.com/odin-software/nyusu/internal/rss"
+	"github.com/pressly/goose/v3"
 )
 
 type Environment struct {
 	DBUrl         string
-	Engine        string
 	Port          string
 	Scrapper      int
-	SecretKey     []byte
 	Environment   string
 	ProductionURL string
 }
@@ -54,19 +53,26 @@ func NewConfig() APIConfig {
 
 	env := Environment{
 		DBUrl:         os.Getenv("DB_URL"),
-		Engine:        os.Getenv("DB_ENGINE"),
 		Port:          fmt.Sprintf(":%s", os.Getenv("PORT")),
-		SecretKey:     []byte(os.Getenv("JWT_KEY")),
 		Scrapper:      scrapper,
 		Environment:   environment,
 		ProductionURL: productionURL,
 	}
 
 	ctx := context.Background()
-	db, err := sql.Open(env.Engine, env.DBUrl)
+	db, err := sql.Open("sqlite3", env.DBUrl)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Run database migrations
+	log.Println("Running database migrations...")
+	if err := runMigrations(db); err != nil {
+		log.Printf("Warning: Migration error: %v", err)
+	} else {
+		log.Println("Migrations completed successfully")
+	}
+
 	dbQueries := database.New(db)
 
 	return APIConfig{
@@ -74,6 +80,14 @@ func NewConfig() APIConfig {
 		DB:  dbQueries,
 		Env: env,
 	}
+}
+
+func runMigrations(db *sql.DB) error {
+	goose.SetBaseFS(nil)
+	if err := goose.SetDialect("sqlite3"); err != nil {
+		return err
+	}
+	return goose.Up(db, "sql/schema")
 }
 
 func (cfg *APIConfig) Readiness(w http.ResponseWriter, r *http.Request) {

@@ -7,7 +7,6 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/odin-software/nyusu/internal/server"
-	_ "github.com/tursodatabase/libsql-client-go/libsql"
 )
 
 func main() {
@@ -37,7 +36,7 @@ func main() {
 
 	mux.HandleFunc("GET /v1/feeds", cfg.CORS(cfg.GetAllFeeds2))                                      // get
 	mux.HandleFunc("GET /v1/feed_follows", cfg.CORS(cfg.MiddlewareAuth(cfg.GetFeedFollowsFromUser))) // get
-	mux.HandleFunc("DELETE /v1/feed_follows/{feedFollowId}", cfg.DeleteFeedFollows)                     // delete
+	mux.HandleFunc("DELETE /v1/feed_follows/{feedFollowId}", cfg.DeleteFeedFollows)                  // delete
 
 	mux.HandleFunc("DELETE /v1/posts/bookmarks/{postId}", cfg.CORS(cfg.MiddlewareAuth(cfg.UnbookmarkPost))) // delete
 	mux.HandleFunc("POST /v1/posts/bookmarks/{postId}", cfg.CORS(cfg.MiddlewareAuth(cfg.BookmarkPost)))     // post

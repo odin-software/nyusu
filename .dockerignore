@@ -1,0 +1,30 @@
+# Git files
+.git
+.gitignore
+.github
+
+# Development files
+.env
+.env.example
+.air.toml
+tmp/
+
+# SQLite databases
+*.db
+*.db-shm
+*.db-wal
+
+# Build artifacts
+nyusu
+main
+
+# Documentation
+README.md
+reqs.md
+
+# macOS
+.DS_Store
+
+# Test files
+*_test.go
+useful.txt
