@@ -48,7 +48,7 @@ func NewConfig() APIConfig {
 
 	productionURL := os.Getenv("PRODUCTION_URL")
 	if productionURL == "" {
-		productionURL = "https://nyusu.do"
+		productionURL = "https://nyusu.odin.do"
 	}
 
 	env := Environment{
