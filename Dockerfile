@@ -42,7 +42,7 @@ EXPOSE 8888
 ENV DB_URL=/data/nyusu.db
 ENV PORT=8888
 ENV ENVIRONMENT=production
-ENV SCRAPPER_TICK=60
+ENV SCRAPPER_TICK=300
 
 # Run the application
 CMD ["./nyusu"]
