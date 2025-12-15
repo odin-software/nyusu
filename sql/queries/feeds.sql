@@ -24,8 +24,8 @@ FROM feeds
 WHERE url = ?;
 
 -- name: CreateFeed :one
-INSERT INTO feeds (name, url, description, image_url, image_text, language, user_id)
-VALUES (?, ?, ?, ?, ?, ?, ?)
+INSERT INTO feeds (name, url, link, description, image_url, image_text, language, user_id)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 RETURNING *;
 
 -- FEED FOLLOWS TABLE
@@ -49,7 +49,7 @@ DELETE FROM feed_follows
 WHERE id = ?;
 
 -- name: GetAllFeedFollowsByEmail :many
-SELECT f.id, f."name", f.url, f.description, f.created_at, ff.id
+SELECT f.id, f."name", f.url, f.link, f.description, f.created_at, ff.id
 FROM feed_follows ff
 INNER JOIN feeds f ON ff.feed_id = f.id
 INNER JOIN users u ON ff.user_id = u.id

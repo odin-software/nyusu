@@ -67,6 +67,7 @@ func (cfg *APIConfig) CreateFeed(w http.ResponseWriter, r *http.Request) {
 		feed, err = cfg.DB.CreateFeed(cfg.ctx, database.CreateFeedParams{
 			Url:         url,
 			Name:        rssData.Channel.Title,
+			Link:        sql.NullString{String: rssData.Channel.Link, Valid: rssData.Channel.Link != ""},
 			Description: sql.NullString{String: rssData.Channel.Description, Valid: true},
 			ImageUrl:    sql.NullString{String: rssData.Channel.Image.Url, Valid: true},
 			ImageText:   sql.NullString{String: rssData.Channel.Image.Title, Valid: true},

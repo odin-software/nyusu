@@ -7,7 +7,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="/static/css/layout.css" />
   <link rel="icon" href="/static/favicon.ico" sizes="any">
-  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
 
   {{ template "css" }}
   <title>Nyusu</title>
@@ -17,7 +16,9 @@
 <body>
   <header>
     <section>
-      <h1><a href="/">Nyusu</a></h1>
+      <a href="/" class="logo-link">
+        <img src="/static/nyusu-icon.svg" alt="Nyusu" class="logo" />
+      </a>
       {{ if .Authenticated }}
       <form action="/users/logout" method="post">
         <button type="submit">Logout</button>

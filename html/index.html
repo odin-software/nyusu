@@ -9,7 +9,7 @@
   {{ range .Posts }}
   <li>
     <a rel="noopener noreferrer" href="{{ .Url }}">{{ .Title }}</a>
-    <span>{{ .Name }}</span>
+    <span><a href="/feeds/{{ .FeedID }}" style="color: inherit; text-decoration: none;">{{ .Name }}</a></span>
     <span>{{ .PublishedAt | date }}</span>
     {{ if eq .IsBookmarked 1 }}
     <button class="unbookmark-btn" data-post-id="{{ .ID }}">Unbookmark</button>

@@ -8,7 +8,11 @@
     {{ if .Feeds }}
     {{ range .Feeds }}
     <li>
+      {{ if .Link.Valid }}
+      <a rel="noopener noreferrer" target="_blank" href="{{ .Link.String }}">{{ .Name }}</a>
+      {{ else }}
       <a rel="noopener noreferrer" href="/feeds/{{ .ID }}">{{ .Name }}</a>
+      {{ end }}
       <span class="feed-description">{{ .Description.String }}</span>
       <form method="post" action="/unsubscribe/{{ .ID_2 }}" class="unsubscribe-form">
         <button type="submit" class="unsubscribe-btn"

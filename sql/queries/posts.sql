@@ -53,7 +53,7 @@ DELETE FROM users_bookmarks
 WHERE user_id = ? AND post_id = ?;
 
 -- name: GetPostsByUserWithBookmarks :many
-SELECT DISTINCT p.id, f.name, p.title, p.author, p.url, p.published_at,
+SELECT DISTINCT p.id, f.id as feed_id, f.name, p.title, p.author, p.url, p.published_at,
        CASE WHEN ub.post_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked
 FROM feed_follows ff
 INNER JOIN users u ON ff.user_id = u.id

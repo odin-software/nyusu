@@ -1,6 +1,22 @@
+:root {
+  --primary-color: #DDE61F;
+  /* Golden Glow */
+  --secondary-color: #1A5632;
+  /* Nordic Pine */
+  --tertiary-color: #0F1822;
+  /* Digital Slate */
+  --quartary-color: #D6D7D5;
+  /* Nordic Mist */
+  --card-bg: #1a2332;
+  /* Slightly lighter than tertiary for cards */
+  --border-color: #2a3544;
+  /* Subtle border color for dark mode */
+}
+
 html {
   display: grid;
   justify-content: center;
+  background-color: var(--tertiary-color);
 }
 
 body {
@@ -12,6 +28,8 @@ body {
   min-width: 23rem;
   margin: 0;
   padding: 0;
+  background-color: var(--tertiary-color);
+  color: var(--quartary-color);
 }
 
 header {
@@ -23,25 +41,23 @@ header {
     width: 100vw;
     margin-left: calc(-50vw + 50%);
 
-    h1 {
-      text-align: center;
-      font-size: 2rem;
-      font-weight: bold;
-      margin: 1.5rem 0;
-      background: linear-gradient(135deg, #00bcd4, #0097a7);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    .logo-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      margin: 1rem 0;
+      transition: transform 0.2s ease;
 
-      a {
-        text-decoration: none;
-        color: inherit;
-        background: inherit;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+      &:hover {
+        transform: scale(1.05);
       }
+    }
+
+    .logo {
+      height: 60px;
+      width: 60px;
+      display: block;
     }
 
     form {
@@ -61,10 +77,11 @@ header {
       grid-template-columns: 1fr 1fr 1fr 1fr;
       gap: 0.5rem;
       font-size: 1rem;
-      border-top: 1px solid #808080;
-      border-bottom: 1px solid #808080;
+      border-top: 2px solid var(--border-color);
+      border-bottom: 2px solid var(--border-color);
       width: 100vw;
       margin-left: calc(-50vw + 50%);
+      background-color: var(--card-bg);
 
       li {
         display: flex;
@@ -72,18 +89,24 @@ header {
       }
 
       a {
-        background-color: aqua;
-        color: black;
+        background-color: transparent;
+        color: var(--quartary-color);
         padding: 0.5rem 1rem;
         text-decoration: none;
         border-radius: 4px;
+        border: 2px solid var(--border-color);
         text-align: center;
         min-width: 4rem;
-        transition: background-color 0.2s ease;
+        font-weight: bold;
+        transition: all 0.2s ease;
       }
 
       a:hover {
-        background-color: #00cccc;
+        background-color: var(--primary-color);
+        color: var(--tertiary-color);
+        border-color: var(--primary-color);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(221, 230, 31, 0.3);
       }
     }
   }
@@ -96,15 +119,16 @@ header {
     a,
     button {
       font-family: monospace;
-      border: 1px solid #808080;
-      background-color: #f5f5f5;
+      border: 2px solid var(--border-color);
+      background-color: var(--card-bg);
       font-size: 14px;
       cursor: pointer;
       text-decoration: none;
-      color: black;
+      color: var(--quartary-color);
+      font-weight: bold;
       padding: 0.4rem 0.8rem;
       border-radius: 4px;
-      transition: background-color 0.2s ease;
+      transition: all 0.2s ease;
       min-height: 2.5rem;
       display: flex;
       align-items: center;
@@ -112,7 +136,11 @@ header {
 
     a:hover,
     button:hover {
-      background-color: #e5e5e5;
+      background-color: var(--primary-color);
+      color: var(--tertiary-color);
+      border-color: var(--primary-color);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(221, 230, 31, 0.3);
     }
   }
 }
@@ -126,9 +154,9 @@ header {
     right: 0.5rem;
   }
 
-  header section h1 {
-    font-size: 1.7rem;
-    margin: 1rem 0;
+  header section .logo {
+    height: 50px;
+    width: 50px;
   }
 
   header nav ul {

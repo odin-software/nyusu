@@ -1,0 +1,24 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" rx="128" fill="#0F1822"/>
+  
+  <!-- Abstract flowing "N" shape that suggests movement and flow -->
+  <!-- This is inspired by news flow, information streaming -->
+  <path d="M 100 380 
+           L 100 180
+           Q 100 120 150 120
+           L 300 120
+           L 300 200
+           L 412 80
+           L 412 332
+           Q 412 392 362 392
+           L 212 392
+           L 212 312
+           L 100 432
+           Z" 
+        fill="#DDE61F"/>
+  
+  <!-- Accent cutout for visual interest -->
+  <circle cx="256" cy="256" r="50" fill="#0F1822"/>
+  <circle cx="256" cy="256" r="30" fill="#1A5632"/>
+</svg>

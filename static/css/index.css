@@ -10,23 +10,24 @@
 .welcome-content {
   max-width: 600px;
   text-align: center;
-  background-color: #fafafa;
-  border: 1px solid #e0e0e0;
+  background-color: var(--card-bg);
+  border: 2px solid var(--border-color);
   border-radius: 8px;
   padding: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
 .welcome-content h2 {
   font-size: 1.8rem;
-  color: #333;
+  color: var(--primary-color);
   margin-bottom: 1rem;
   font-family: monospace;
+  font-weight: bold;
 }
 
 .welcome-content>p {
   font-size: 1.1rem;
-  color: #666;
+  color: var(--quartary-color);
   line-height: 1.6;
   margin-bottom: 2rem;
 }
@@ -45,14 +46,15 @@
 
 .feature h3 {
   font-size: 1.1rem;
-  color: #333;
+  color: var(--primary-color);
   margin-bottom: 0.5rem;
   font-family: monospace;
+  font-weight: bold;
 }
 
 .feature p {
   font-size: 0.9rem;
-  color: #666;
+  color: var(--quartary-color);
   line-height: 1.5;
   margin: 0;
 }
@@ -77,25 +79,30 @@
 }
 
 .btn-primary {
-  background-color: #0066cc;
-  color: white;
+  background-color: var(--primary-color);
+  color: var(--tertiary-color);
+  border: 2px solid var(--primary-color);
 }
 
 .btn-primary:hover {
-  background-color: #0052a3;
-  transform: translateY(-1px);
+  background-color: transparent;
+  color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(221, 230, 31, 0.4);
 }
 
 .btn-secondary {
   background-color: transparent;
-  color: #0066cc;
-  border: 1px solid #0066cc;
+  color: var(--quartary-color);
+  border: 2px solid var(--border-color);
 }
 
 .btn-secondary:hover {
-  background-color: #0066cc;
-  color: white;
-  transform: translateY(-1px);
+  background-color: var(--primary-color);
+  color: var(--tertiary-color);
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(221, 230, 31, 0.4);
 }
 
 @media (min-width: 600px) {
@@ -169,9 +176,10 @@
 
   h2 {
     font-size: 1.5rem;
-    color: #333;
+    color: var(--primary-color);
     margin: 0;
     text-align: center;
+    font-weight: bold;
   }
 }
 
@@ -198,43 +206,56 @@
     grid-template-rows: auto auto auto;
     gap: 0.5rem;
     padding: 1rem;
-    border: 1px solid #e0e0e0;
+    border: 2px solid var(--border-color);
     border-radius: 8px;
-    background-color: #fafafa;
-    transition: box-shadow 0.2s ease;
+    background-color: var(--card-bg);
+    transition: all 0.2s ease;
     position: relative;
   }
 
   li:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(221, 230, 31, 0.2);
+    transform: translateY(-2px);
   }
 
   li a {
     grid-column: 1 / -1;
     font-size: 1.1rem;
     font-weight: bold;
-    color: #333;
+    color: var(--quartary-color);
     text-decoration: none;
     line-height: 1.4;
     margin-bottom: 0.25rem;
   }
 
   li a:hover {
-    color: #0066cc;
+    color: var(--primary-color);
     text-decoration: underline;
   }
 
   li span:first-of-type {
     grid-column: 1;
     font-size: 0.9rem;
-    color: #666;
+    color: #9ca3af;
     font-style: italic;
+  }
+
+  li span:first-of-type a {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  li span:first-of-type a:hover {
+    color: var(--primary-color);
+    text-decoration: underline;
   }
 
   li span:last-of-type {
     grid-column: 1;
     font-size: 0.85rem;
-    color: #888;
+    color: #6b7280;
   }
 
   /* Bookmark button positioning */
@@ -269,60 +290,65 @@
 
 /* Bookmark button - primary action */
 .bookmark-btn {
-  background-color: #e8f4fd;
-  color: #0066cc;
-  border-color: #b3d9ff;
+  background-color: transparent;
+  color: var(--quartary-color);
+  border-color: var(--border-color);
+  font-weight: bold;
 }
 
 .bookmark-btn:hover {
-  background-color: #d1e9fc;
-  border-color: #80c0ff;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 102, 204, 0.2);
+  background-color: var(--primary-color);
+  color: var(--tertiary-color);
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 3px 6px rgba(221, 230, 31, 0.4);
 }
 
 .bookmark-btn:active {
   transform: translateY(0);
-  box-shadow: 0 1px 2px rgba(0, 102, 204, 0.2);
+  box-shadow: 0 1px 3px rgba(221, 230, 31, 0.4);
 }
 
 /* Unbookmark button - secondary action */
 .unbookmark-btn {
-  background-color: #fff8e1;
-  color: #ff9800;
-  border-color: #ffcc80;
+  background-color: var(--primary-color);
+  color: var(--tertiary-color);
+  border-color: var(--primary-color);
+  font-weight: bold;
 }
 
 .unbookmark-btn:hover {
-  background-color: #fff3c4;
-  border-color: #ffb74d;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(255, 152, 0, 0.2);
+  background-color: transparent;
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 3px 6px rgba(221, 230, 31, 0.4);
 }
 
 .unbookmark-btn:active {
   transform: translateY(0);
-  box-shadow: 0 1px 2px rgba(255, 152, 0, 0.2);
+  box-shadow: 0 1px 3px rgba(221, 230, 31, 0.4);
 }
 
 /* Unsubscribe button - warning action */
 .unsubscribe-btn {
-  background-color: #ffeaea;
-  color: #d32f2f;
-  border-color: #ffcccb;
+  background-color: #dc2626;
+  color: white;
+  border-color: #dc2626;
   font-size: 0.75rem;
+  font-weight: bold;
 }
 
 .unsubscribe-btn:hover {
-  background-color: #ffcccb;
-  border-color: #ff9999;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(211, 47, 47, 0.2);
+  background-color: #991b1b;
+  border-color: #991b1b;
+  transform: translateY(-2px);
+  box-shadow: 0 3px 6px rgba(220, 38, 38, 0.3);
 }
 
 .unsubscribe-btn:active {
   transform: translateY(0);
-  box-shadow: 0 1px 2px rgba(211, 47, 47, 0.2);
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.3);
 }
 
 /* Mobile optimizations */
@@ -382,25 +408,27 @@
 
 .about h2 {
   font-size: 1.5rem;
-  color: #333;
+  color: var(--primary-color);
   margin-bottom: 1rem;
   text-align: center;
+  font-weight: bold;
 }
 
 .about h3 {
   font-size: 1.2rem;
-  color: #333;
+  color: var(--primary-color);
   margin: 1.5rem 0 0.5rem 0;
+  font-weight: bold;
 }
 
 .about p {
   margin-bottom: 1rem;
-  color: #555;
+  color: var(--quartary-color);
 }
 
 .about ul {
   margin: 0.5rem 0 1rem 1.5rem;
-  color: #555;
+  color: var(--quartary-color);
 }
 
 .about li {
@@ -409,24 +437,28 @@
 
 .github-link {
   display: inline-block;
-  background-color: #0066cc;
-  color: white;
+  background-color: var(--primary-color);
+  color: var(--tertiary-color);
   padding: 0.75rem 1.5rem;
   text-decoration: none;
   border-radius: 6px;
+  border: 2px solid var(--primary-color);
   font-family: monospace;
   font-weight: bold;
-  transition: background-color 0.2s ease, transform 0.1s ease;
+  transition: all 0.2s ease;
   margin-top: 1rem;
 }
 
 .github-link:hover {
-  background-color: #0052a3;
-  transform: translateY(-1px);
+  background-color: transparent;
+  color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(221, 230, 31, 0.4);
 }
 
 .github-link:active {
   transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(221, 230, 31, 0.4);
 }
 
 @media (max-width: 600px) {
@@ -478,7 +510,8 @@ section.posts .posts-list li a {
   h2 {
     font-size: 1.4rem;
     margin-bottom: 1rem;
-    color: #333;
+    color: var(--primary-color);
+    font-weight: bold;
   }
 
   form {
@@ -491,7 +524,7 @@ section.posts .posts-list li a {
     font-family: monospace;
     font-size: 1rem;
     font-weight: bold;
-    color: #333;
+    color: var(--quartary-color);
     margin-bottom: 0.25rem;
   }
 
@@ -499,49 +532,54 @@ section.posts .posts-list li a {
     font-family: monospace;
     font-size: 1rem;
     padding: 0.75rem;
-    border: 1px solid #ddd;
+    border: 2px solid var(--border-color);
     border-radius: 6px;
-    background-color: #fafafa;
-    transition: border-color 0.2s ease, background-color 0.2s ease;
+    background-color: var(--card-bg);
+    color: var(--quartary-color);
+    transition: all 0.2s ease;
   }
 
   input[type="url"]:focus {
     outline: none;
-    border-color: #0066cc;
-    background-color: white;
-    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(221, 230, 31, 0.2);
   }
 
   button[type="submit"] {
     font-family: monospace;
     font-size: 1rem;
+    font-weight: bold;
     padding: 0.75rem 1.5rem;
-    background-color: #0066cc;
-    color: white;
-    border: none;
+    background-color: var(--primary-color);
+    color: var(--tertiary-color);
+    border: 2px solid var(--primary-color);
     border-radius: 6px;
     cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.1s ease;
+    transition: all 0.2s ease;
     justify-self: start;
   }
 
   button[type="submit"]:hover {
-    background-color: #0052a3;
-    transform: translateY(-1px);
+    background-color: transparent;
+    color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(221, 230, 31, 0.4);
   }
 
   button[type="submit"]:active {
     transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(221, 230, 31, 0.4);
   }
 
   .error {
-    color: #d32f2f;
+    color: #fca5a5;
     font-size: 0.9rem;
     margin-top: 0.5rem;
     padding: 0.5rem;
-    background-color: #ffeaea;
-    border: 1px solid #ffcccb;
+    background-color: rgba(220, 38, 38, 0.2);
+    border: 2px solid rgba(220, 38, 38, 0.4);
     border-radius: 4px;
+    font-weight: bold;
   }
 }
 
