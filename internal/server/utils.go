@@ -51,21 +51,46 @@ func respondWithJSON(w http.ResponseWriter, status int, payload interface{}) {
 	w.Write(data)
 }
 
+const DefaultPageSize int32 = 15
+
+type Pagination struct {
+	PageNumber int32
+	HasPrev    bool
+	HasNext    bool
+}
+
+func NewPagination(pageNumber int32, itemCount int, pageSize int32) Pagination {
+	return Pagination{
+		PageNumber: pageNumber,
+		HasPrev:    pageNumber > 1,
+		HasNext:    itemCount > int(pageSize),
+	}
+}
+
 func GetPageSizeNumber(r *http.Request) (limit int32, offset int32) {
 	q := r.URL.Query()
 	ps := q.Get("pageSize")
 	pn := q.Get("pageNumber")
 	pageSize, err := strconv.ParseInt(ps, 10, 32)
 	if err != nil {
-		pageSize = 20
+		pageSize = int64(DefaultPageSize)
 	}
 	pageNumber, err := strconv.ParseInt(pn, 10, 32)
-	if err != nil {
-		pageNumber = 0
+	if err != nil || pageNumber < 1 {
+		pageNumber = 1
 	}
 	limit = int32(pageSize)
 	offset = int32(math.Max(float64((pageNumber-1)*int64(limit)), 0.0))
 	return
+}
+
+func GetPageNumber(r *http.Request) int32 {
+	pn := r.URL.Query().Get("pageNumber")
+	pageNumber, err := strconv.ParseInt(pn, 10, 32)
+	if err != nil || pageNumber < 1 {
+		pageNumber = 1
+	}
+	return int32(pageNumber)
 }
 
 func ParseTime(value string) (time.Time, error) {

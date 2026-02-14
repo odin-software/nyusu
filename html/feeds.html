@@ -14,7 +14,7 @@
       <a rel="noopener noreferrer" href="/feeds/{{ .ID }}">{{ .Name }}</a>
       {{ end }}
       <span class="feed-description">{{ .Description.String }}</span>
-      <form method="post" action="/unsubscribe/{{ .ID_2 }}" class="unsubscribe-form">
+      <form method="post" action="/unsubscribe/{{ .FeedFollowID }}" class="unsubscribe-form">
         <button type="submit" class="unsubscribe-btn"
           onclick="return confirm('Are you sure you want to unsubscribe from this feed?')">Unsubscribe</button>
       </form>
@@ -24,5 +24,12 @@
     <span>no feeds</span>
     {{ end }}
   </ul>
+  {{ if or .Pagination.HasPrev .Pagination.HasNext }}
+  <nav class="pagination">
+    {{ if .Pagination.HasPrev }}<a href="?pageNumber={{ sub .Pagination.PageNumber 1 }}">Prev</a>{{ end }}
+    <span>Page {{ .Pagination.PageNumber }}</span>
+    {{ if .Pagination.HasNext }}<a href="?pageNumber={{ add .Pagination.PageNumber 1 }}">Next</a>{{ end }}
+  </nav>
+  {{ end }}
 </section>
 {{ end }}

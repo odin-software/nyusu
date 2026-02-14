@@ -22,6 +22,12 @@ func getTemplateFuncMap() template.FuncMap {
 		"date": func(t time.Time) string {
 			return t.Format("02-01-2006")
 		},
+		"add": func(a, b int32) int32 {
+			return a + b
+		},
+		"sub": func(a, b int32) int32 {
+			return a - b
+		},
 	}
 }
 
@@ -34,6 +40,7 @@ func TestRssParsing(url string) {
 type IndexData struct {
 	Authenticated bool
 	Posts         []database.GetPostsByUserWithBookmarksRow
+	Pagination    Pagination
 }
 
 type AuthPageData struct {
@@ -50,16 +57,19 @@ type AllFeedsData struct {
 	Authenticated bool
 	Error         string
 	Feeds         []database.GetAllFeedFollowsByEmailRow
+	Pagination    Pagination
 }
 
 type FeedPostsData struct {
 	Authenticated bool
 	Posts         []database.GetPostsByUserAndFeedWithBookmarksRow
+	Pagination    Pagination
 }
 
 type BookmarksData struct {
 	Authenticated bool
 	Posts         []database.GetBookmarkedPostsByDateRow
+	Pagination    Pagination
 }
 
 func (cfg *APIConfig) getHome(w http.ResponseWriter, r *http.Request, auth AuthResult) {
@@ -76,10 +86,11 @@ func (cfg *APIConfig) getHome(w http.ResponseWriter, r *http.Request, auth AuthR
 		return
 	}
 
+	pageNumber := GetPageNumber(r)
 	limit, offset := GetPageSizeNumber(r)
 	posts, err := cfg.DB.GetPostsByUserWithBookmarks(cfg.ctx, database.GetPostsByUserWithBookmarksParams{
 		Email:  auth.SessionData.Email,
-		Limit:  limit,
+		Limit:  limit + 1,
 		Offset: offset,
 	})
 	if err != nil {
@@ -87,16 +98,16 @@ func (cfg *APIConfig) getHome(w http.ResponseWriter, r *http.Request, auth AuthR
 		internalServerErrorHandler(w)
 		return
 	}
-	if len(posts) < 1 {
-		t.Execute(w, IndexData{
-			Authenticated: true,
-			Posts:         []database.GetPostsByUserWithBookmarksRow{},
-		})
-		return
+
+	pag := NewPagination(pageNumber, len(posts), limit)
+	if len(posts) > int(limit) {
+		posts = posts[:limit]
 	}
+
 	err = t.Execute(w, IndexData{
 		Authenticated: true,
 		Posts:         posts,
+		Pagination:    pag,
 	})
 	if err != nil {
 		panic(err)
@@ -131,10 +142,11 @@ func (cfg *APIConfig) getAllFeeds(w http.ResponseWriter, r *http.Request, auth A
 	query := r.URL.Query()
 	error := query.Get("error")
 
+	pageNumber := GetPageNumber(r)
 	limit, offset := GetPageSizeNumber(r)
 	feeds, err := cfg.DB.GetAllFeedFollowsByEmail(cfg.ctx, database.GetAllFeedFollowsByEmailParams{
 		Email:  auth.SessionData.Email,
-		Limit:  limit,
+		Limit:  limit + 1,
 		Offset: offset,
 	})
 	if err != nil {
@@ -142,7 +154,13 @@ func (cfg *APIConfig) getAllFeeds(w http.ResponseWriter, r *http.Request, auth A
 		internalServerErrorHandler(w)
 		return
 	}
-	t, err := template.ParseFiles("html/layout.html", "html/feeds.html")
+
+	pag := NewPagination(pageNumber, len(feeds), limit)
+	if len(feeds) > int(limit) {
+		feeds = feeds[:limit]
+	}
+
+	t, err := template.New("layout").Funcs(getTemplateFuncMap()).ParseFiles("html/layout.html", "html/feeds.html")
 	if err != nil {
 		panic(err)
 	}
@@ -150,6 +168,7 @@ func (cfg *APIConfig) getAllFeeds(w http.ResponseWriter, r *http.Request, auth A
 		Authenticated: true,
 		Error:         error,
 		Feeds:         feeds,
+		Pagination:    pag,
 	})
 	if err != nil {
 		panic(err)
@@ -169,11 +188,12 @@ func (cfg *APIConfig) getFeedPosts(w http.ResponseWriter, r *http.Request, auth 
 		http.Redirect(w, r, "/", http.StatusMovedPermanently)
 		return
 	}
+	pageNumber := GetPageNumber(r)
 	limit, offset := GetPageSizeNumber(r)
 	posts, err := cfg.DB.GetPostsByUserAndFeedWithBookmarks(cfg.ctx, database.GetPostsByUserAndFeedWithBookmarksParams{
 		Email:  auth.SessionData.Email,
 		ID:     int64(feedId),
-		Limit:  limit,
+		Limit:  limit + 1,
 		Offset: offset,
 	})
 	if err != nil {
@@ -181,6 +201,12 @@ func (cfg *APIConfig) getFeedPosts(w http.ResponseWriter, r *http.Request, auth 
 		internalServerErrorHandler(w)
 		return
 	}
+
+	pag := NewPagination(pageNumber, len(posts), limit)
+	if len(posts) > int(limit) {
+		posts = posts[:limit]
+	}
+
 	t, err := template.New("layout.html").Funcs(fm).ParseFiles("html/layout.html", "html/feeds_posts.html")
 	if err != nil {
 		panic(err)
@@ -188,6 +214,7 @@ func (cfg *APIConfig) getFeedPosts(w http.ResponseWriter, r *http.Request, auth 
 	err = t.ExecuteTemplate(w, "layout", FeedPostsData{
 		Authenticated: true,
 		Posts:         posts,
+		Pagination:    pag,
 	})
 	if err != nil {
 		panic(err)
@@ -201,16 +228,22 @@ func (cfg *APIConfig) GetFeedPosts(w http.ResponseWriter, r *http.Request) {
 func (cfg *APIConfig) getBookmarks(w http.ResponseWriter, r *http.Request, auth AuthResult) {
 	fm := getTemplateFuncMap()
 
+	pageNumber := GetPageNumber(r)
 	limit, offset := GetPageSizeNumber(r)
 	posts, err := cfg.DB.GetBookmarkedPostsByDate(cfg.ctx, database.GetBookmarkedPostsByDateParams{
 		UserID: auth.SessionData.UserID2,
-		Limit:  limit,
+		Limit:  limit + 1,
 		Offset: offset,
 	})
 	if err != nil {
 		log.Println(err)
 		internalServerErrorHandler(w)
 		return
+	}
+
+	pag := NewPagination(pageNumber, len(posts), limit)
+	if len(posts) > int(limit) {
+		posts = posts[:limit]
 	}
 
 	t, err := template.New("layout.html").Funcs(fm).ParseFiles("html/layout.html", "html/bookmarks.html")
@@ -220,6 +253,7 @@ func (cfg *APIConfig) getBookmarks(w http.ResponseWriter, r *http.Request, auth 
 	err = t.ExecuteTemplate(w, "layout", BookmarksData{
 		Authenticated: true,
 		Posts:         posts,
+		Pagination:    pag,
 	})
 	if err != nil {
 		panic(err)

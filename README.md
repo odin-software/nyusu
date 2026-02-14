@@ -1,6 +1,6 @@
 # Nyusu
 
-RSS feed reader built with Go.
+RSS feed reader built with Go, PostgreSQL, and Authentik OIDC.
 
 ## Local Setup
 
@@ -10,18 +10,21 @@ RSS feed reader built with Go.
    go mod download
    ```
 
-2. **Set environment variables**
+2. **Set up PostgreSQL**
 
-   ```bash
-   export ENVIRONMENT=development
-   export DB_URL=nyusu.db
-   export PORT=8888
+   Create a database and user for Nyusu:
+
+   ```sql
+   CREATE USER nyusu WITH PASSWORD 'password';
+   CREATE DATABASE nyusu OWNER nyusu;
    ```
 
-3. **Run database migrations**
+3. **Set environment variables**
+
+   Copy `.env.example` to `.env` and fill in the values:
 
    ```bash
-   goose -dir sql/schema sqlite3 nyusu.db up
+   cp .env.example .env
    ```
 
 4. **Start the server**
@@ -30,6 +33,8 @@ RSS feed reader built with Go.
    go run .
    ```
 
+   Migrations run automatically on startup.
+
 5. **Open in browser**
    ```
    http://localhost:8888
@@ -37,61 +42,37 @@ RSS feed reader built with Go.
 
 ## Docker Setup
 
-### Building the Docker Image
-
-```bash
-docker build -t nyusu .
-```
-
 ### Running with Docker
 
 ```bash
-# Create a volume for persistent database storage
-docker volume create nyusu-data
-
-# Run the container
 docker run -d \
   --name nyusu \
   -p 8888:8888 \
-  -v nyusu-data:/data \
+  -e DB_URL=postgres://nyusu:password@db-host:5432/nyusu \
+  -e OIDC_ISSUER_URL=https://auth.odin.do/application/o/nyusu \
+  -e OIDC_CLIENT_ID=your-client-id \
+  -e OIDC_CLIENT_SECRET=your-client-secret \
+  -e OIDC_REDIRECT_URL=https://nyusu.odin.do/auth/callback \
   -e ENVIRONMENT=production \
-  -e PORT=8888 \
-  -e SCRAPPER_TICK=60 \
-  ghcr.io/odin-software/nyusu:latest
+  git.odin.do/odin-software/nyusu:latest
 ```
 
-**Note**: Database migrations run automatically on container startup, so no manual setup is required!
+Migrations run automatically on container startup.
 
 ### Environment Variables
 
-| Variable         | Description                                      | Default            |
-| ---------------- | ------------------------------------------------ | ------------------ |
-| `DB_URL`         | Path to SQLite database file                     | `/data/nyusu.db`   |
-| `PORT`           | Port number for the server                       | `8888`             |
-| `ENVIRONMENT`    | Environment mode (`development` or `production`) | `development`      |
-| `SCRAPPER_TICK`  | Interval in seconds for RSS feed scraping        | `60`               |
-| `PRODUCTION_URL` | Production URL for CORS (production only)        | `https://nyusu.do` |
+| Variable            | Description                                      | Default                |
+| ------------------- | ------------------------------------------------ | ---------------------- |
+| `DB_URL`            | PostgreSQL connection string                     | —                      |
+| `PORT`              | Port number for the server                       | `8888`                 |
+| `ENVIRONMENT`       | Environment mode (`development` or `production`) | `development`          |
+| `SCRAPPER_TICK`     | Interval in seconds for RSS feed fetching        | `300` (production)     |
+| `PRODUCTION_URL`    | Production URL for CORS                          | `https://nyusu.odin.do`|
+| `OIDC_ISSUER_URL`   | Authentik OIDC issuer URL                        | —                      |
+| `OIDC_CLIENT_ID`    | OIDC client ID                                   | —                      |
+| `OIDC_CLIENT_SECRET`| OIDC client secret                               | —                      |
+| `OIDC_REDIRECT_URL` | OIDC callback URL                                | —                      |
 
-### Automatic Deployment
+### Deployment
 
-This repository uses GitHub Actions to automatically build and push Docker images to GitHub Container Registry (ghcr.io) on every push to the `main` branch.
-
-**How it works:**
-
-1. Push code to `main` branch
-2. GitHub Actions builds the Docker image
-3. Image is pushed to `ghcr.io/odin-software/nyusu:latest`
-4. Watchtower on your self-hosted server automatically pulls and updates the container
-
-**Using Watchtower for auto-updates:**
-
-```bash
-docker run -d \
-  --name watchtower \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  containrrr/watchtower \
-  --interval 300 \
-  nyusu
-```
-
-This will check for updates every 5 minutes and automatically restart the container with the new image.
+Gitea Actions automatically builds and pushes Docker images to `git.odin.do/odin-software/nyusu` on every push to `main`.

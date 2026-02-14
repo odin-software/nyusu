@@ -22,6 +22,13 @@
     <span>no feeds</span>
     {{ end }}
   </ul>
+  {{ if or .Pagination.HasPrev .Pagination.HasNext }}
+  <nav class="pagination">
+    {{ if .Pagination.HasPrev }}<a href="?pageNumber={{ sub .Pagination.PageNumber 1 }}">Prev</a>{{ end }}
+    <span>Page {{ .Pagination.PageNumber }}</span>
+    {{ if .Pagination.HasNext }}<a href="?pageNumber={{ add .Pagination.PageNumber 1 }}">Next</a>{{ end }}
+  </nav>
+  {{ end }}
 </section>
 
 <script>
