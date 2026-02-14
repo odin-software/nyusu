@@ -4,7 +4,7 @@ VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING *;
 
 -- name: GetPostsByUser :many
-SELECT DISTINCT p.id, f.name, p.title, p.author, p.url, p.published_at
+SELECT p.id, f.name, p.title, p.author, p.url, p.published_at
 FROM feed_follows ff
 INNER JOIN users u ON ff.user_id = u.id
 INNER JOIN feeds f ON ff.feed_id = f.id
@@ -26,7 +26,7 @@ LIMIT $3
 OFFSET $4;
 
 -- name: GetBookmarkedPostsByPublished :many
-SELECT DISTINCT p.id, p.title, p.url, p.published_at
+SELECT p.id, p.title, p.url, p.published_at
 FROM users_bookmarks ub
 INNER JOIN posts p ON p.id = ub.post_id
 WHERE ub.user_id = $1
@@ -35,7 +35,7 @@ LIMIT $2
 OFFSET $3;
 
 -- name: GetBookmarkedPostsByDate :many
-SELECT DISTINCT p.id, p.title, p.url, p.published_at, f.name
+SELECT p.id, p.title, p.url, p.published_at, f.name
 FROM users_bookmarks ub
 INNER JOIN posts p ON p.id = ub.post_id
 INNER JOIN feeds f ON p.feed_id = f.id
@@ -53,7 +53,7 @@ DELETE FROM users_bookmarks
 WHERE user_id = $1 AND post_id = $2;
 
 -- name: GetPostsByUserWithBookmarks :many
-SELECT DISTINCT p.id, f.id as feed_id, f.name, p.title, p.author, p.url, p.published_at,
+SELECT p.id, f.id as feed_id, f.name, p.title, p.author, p.url, p.published_at,
        CASE WHEN ub.post_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked
 FROM feed_follows ff
 INNER JOIN users u ON ff.user_id = u.id
