@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
-	"math"
 	"net/http"
 	"strconv"
 
@@ -17,7 +16,7 @@ func (cfg *APIConfig) GetAllFeeds2(w http.ResponseWriter, r *http.Request) {
 	ps, pn := GetPageSizeNumber(r)
 	feeds, err := cfg.DB.GetAllFeeds(cfg.ctx, database.GetAllFeedsParams{
 		Limit:  ps,
-		Offset: int64(math.Min(float64(pn-1*ps), 0.0)),
+		Offset: pn,
 	})
 	if err != nil {
 		log.Print(err)
@@ -56,7 +55,7 @@ func (cfg *APIConfig) CreateFeed(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := database.User{
-		ID:        sessionData.ID_2,
+		ID:        sessionData.UserID2,
 	}
 
 	existingFeed, err := cfg.DB.GetFeedByUrl(cfg.ctx, url)

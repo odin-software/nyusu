@@ -7,18 +7,19 @@ package database
 
 import (
 	"context"
+	"time"
 )
 
 const createSession = `-- name: CreateSession :one
 INSERT INTO sessions (token, user_id, expires_at)
-VALUES (?, ?, ?)
+VALUES ($1, $2, $3)
 RETURNING id, token, user_id, created_at, expires_at
 `
 
 type CreateSessionParams struct {
-	Token     string `json:"token"`
-	UserID    int64  `json:"user_id"`
-	ExpiresAt int64  `json:"expires_at"`
+	Token     string    `json:"token"`
+	UserID    int64     `json:"user_id"`
+	ExpiresAt time.Time `json:"expires_at"`
 }
 
 func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error) {
@@ -36,7 +37,7 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (S
 
 const deleteExpiredSessions = `-- name: DeleteExpiredSessions :exec
 DELETE FROM sessions
-WHERE expires_at <= unixepoch()
+WHERE expires_at <= NOW()
 `
 
 func (q *Queries) DeleteExpiredSessions(ctx context.Context) error {
@@ -46,7 +47,7 @@ func (q *Queries) DeleteExpiredSessions(ctx context.Context) error {
 
 const deleteSession = `-- name: DeleteSession :exec
 DELETE FROM sessions
-WHERE token = ?
+WHERE token = $1
 `
 
 func (q *Queries) DeleteSession(ctx context.Context, token string) error {
@@ -56,7 +57,7 @@ func (q *Queries) DeleteSession(ctx context.Context, token string) error {
 
 const deleteUserSessions = `-- name: DeleteUserSessions :exec
 DELETE FROM sessions
-WHERE user_id = ?
+WHERE user_id = $1
 `
 
 func (q *Queries) DeleteUserSessions(ctx context.Context, userID int64) error {
@@ -66,24 +67,24 @@ func (q *Queries) DeleteUserSessions(ctx context.Context, userID int64) error {
 
 const getSessionByToken = `-- name: GetSessionByToken :one
 SELECT s.id, s.token, s.user_id, s.created_at, s.expires_at,
-       u.id, u.name, u.email, u.password, u.created_at, u.updated_at
+       u.id AS user_id_2, u.name, u.email, u.sub, u.created_at AS user_created_at, u.updated_at AS user_updated_at
 FROM sessions s
 INNER JOIN users u ON s.user_id = u.id
-WHERE s.token = ? AND s.expires_at > unixepoch()
+WHERE s.token = $1 AND s.expires_at > NOW()
 `
 
 type GetSessionByTokenRow struct {
-	ID          int64  `json:"id"`
-	Token       string `json:"token"`
-	UserID      int64  `json:"user_id"`
-	CreatedAt   int64  `json:"created_at"`
-	ExpiresAt   int64  `json:"expires_at"`
-	ID_2        int64  `json:"id_2"`
-	Name        string `json:"name"`
-	Email       string `json:"email"`
-	Password    string `json:"password"`
-	CreatedAt_2 int64  `json:"created_at_2"`
-	UpdatedAt   int64  `json:"updated_at"`
+	ID            int64     `json:"id"`
+	Token         string    `json:"token"`
+	UserID        int64     `json:"user_id"`
+	CreatedAt     time.Time `json:"created_at"`
+	ExpiresAt     time.Time `json:"expires_at"`
+	UserID2       int64     `json:"user_id_2"`
+	Name          string    `json:"name"`
+	Email         string    `json:"email"`
+	Sub           string    `json:"sub"`
+	UserCreatedAt time.Time `json:"user_created_at"`
+	UserUpdatedAt time.Time `json:"user_updated_at"`
 }
 
 func (q *Queries) GetSessionByToken(ctx context.Context, token string) (GetSessionByTokenRow, error) {
@@ -95,12 +96,12 @@ func (q *Queries) GetSessionByToken(ctx context.Context, token string) (GetSessi
 		&i.UserID,
 		&i.CreatedAt,
 		&i.ExpiresAt,
-		&i.ID_2,
+		&i.UserID2,
 		&i.Name,
 		&i.Email,
-		&i.Password,
-		&i.CreatedAt_2,
-		&i.UpdatedAt,
+		&i.Sub,
+		&i.UserCreatedAt,
+		&i.UserUpdatedAt,
 	)
 	return i, err
 }

@@ -10,24 +10,32 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/joho/godotenv"
 	"github.com/odin-software/nyusu/internal/database"
 	"github.com/odin-software/nyusu/internal/rss"
 	"github.com/pressly/goose/v3"
+	"golang.org/x/oauth2"
 )
 
 type Environment struct {
-	DBUrl         string
-	Port          string
-	Scrapper      int
-	Environment   string
-	ProductionURL string
+	DBUrl           string
+	Port            string
+	Scrapper        int
+	Environment     string
+	ProductionURL   string
+	OIDCIssuerURL   string
+	OIDCClientID    string
+	OIDCClientSecret string
+	OIDCRedirectURL string
 }
 
 type APIConfig struct {
-	ctx context.Context
-	DB  *database.Queries
-	Env Environment
+	ctx          context.Context
+	DB           *database.Queries
+	Env          Environment
+	OIDCProvider *oidc.Provider
+	OAuth2Config oauth2.Config
 }
 
 type AuthHandler func(http.ResponseWriter, *http.Request, database.User)
@@ -52,15 +60,19 @@ func NewConfig() APIConfig {
 	}
 
 	env := Environment{
-		DBUrl:         os.Getenv("DB_URL"),
-		Port:          fmt.Sprintf(":%s", os.Getenv("PORT")),
-		Scrapper:      scrapper,
-		Environment:   environment,
-		ProductionURL: productionURL,
+		DBUrl:            os.Getenv("DB_URL"),
+		Port:             fmt.Sprintf(":%s", os.Getenv("PORT")),
+		Scrapper:         scrapper,
+		Environment:      environment,
+		ProductionURL:    productionURL,
+		OIDCIssuerURL:    os.Getenv("OIDC_ISSUER_URL"),
+		OIDCClientID:     os.Getenv("OIDC_CLIENT_ID"),
+		OIDCClientSecret: os.Getenv("OIDC_CLIENT_SECRET"),
+		OIDCRedirectURL:  os.Getenv("OIDC_REDIRECT_URL"),
 	}
 
 	ctx := context.Background()
-	db, err := sql.Open("sqlite3", env.DBUrl)
+	db, err := sql.Open("pgx", env.DBUrl)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -75,16 +87,32 @@ func NewConfig() APIConfig {
 
 	dbQueries := database.New(db)
 
+	// Initialize OIDC provider
+	provider, err := oidc.NewProvider(ctx, env.OIDCIssuerURL)
+	if err != nil {
+		log.Fatalf("Failed to initialize OIDC provider: %v", err)
+	}
+
+	oauth2Config := oauth2.Config{
+		ClientID:     env.OIDCClientID,
+		ClientSecret: env.OIDCClientSecret,
+		RedirectURL:  env.OIDCRedirectURL,
+		Endpoint:     provider.Endpoint(),
+		Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
+	}
+
 	return APIConfig{
-		ctx: ctx,
-		DB:  dbQueries,
-		Env: env,
+		ctx:          ctx,
+		DB:           dbQueries,
+		Env:          env,
+		OIDCProvider: provider,
+		OAuth2Config: oauth2Config,
 	}
 }
 
 func runMigrations(db *sql.DB) error {
 	goose.SetBaseFS(nil)
-	if err := goose.SetDialect("sqlite3"); err != nil {
+	if err := goose.SetDialect("postgres"); err != nil {
 		return err
 	}
 	return goose.Up(db, "sql/schema")
@@ -105,7 +133,7 @@ func (cfg *APIConfig) Err(w http.ResponseWriter, r *http.Request) {
 
 func (cfg *APIConfig) FetchPastFeeds(limit int) {
 	var wg sync.WaitGroup
-	fs, err := cfg.DB.GetNextFeedsToFetch(cfg.ctx, int64(limit))
+	fs, err := cfg.DB.GetNextFeedsToFetch(cfg.ctx, int32(limit))
 	if err != nil {
 		log.Println(err)
 		return
@@ -139,7 +167,7 @@ func (cfg *APIConfig) FetchPastFeeds(limit int) {
 					Author:      author,
 					Description: sql.NullString{String: p.Description, Valid: true},
 					FeedID:      id,
-					PublishedAt: t.Unix(),
+					PublishedAt: t,
 				})
 				if err != nil {
 					continue
@@ -177,7 +205,7 @@ func (cfg *APIConfig) FetchOneFeedSync(feedId int64, url string) {
 			Author:      author,
 			Description: sql.NullString{String: p.Description, Valid: true},
 			FeedID:      feedId,
-			PublishedAt: t.Unix(),
+			PublishedAt: t,
 		})
 		if err != nil {
 			continue

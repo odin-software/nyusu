@@ -8,12 +8,13 @@ package database
 import (
 	"context"
 	"database/sql"
+	"time"
 )
 
 const createFeed = `-- name: CreateFeed :one
 INSERT INTO feeds (name, url, link, description, image_url, image_text, language, user_id)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-RETURNING id, name, url, user_id, created_at, updated_at, last_fetched_at, description, image_url, image_text, language, link
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+RETURNING id, name, url, link, description, image_url, image_text, language, user_id, last_fetched_at, created_at, updated_at
 `
 
 type CreateFeedParams struct {
@@ -43,23 +44,23 @@ func (q *Queries) CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, e
 		&i.ID,
 		&i.Name,
 		&i.Url,
-		&i.UserID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.LastFetchedAt,
+		&i.Link,
 		&i.Description,
 		&i.ImageUrl,
 		&i.ImageText,
 		&i.Language,
-		&i.Link,
+		&i.UserID,
+		&i.LastFetchedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const createFeedFollows = `-- name: CreateFeedFollows :one
 INSERT INTO feed_follows (user_id, feed_id)
-VALUES (?, ?)
-RETURNING id, user_id, feed_id, created_at, updated_at, "foreign"
+VALUES ($1, $2)
+RETURNING id, user_id, feed_id, created_at, updated_at
 `
 
 type CreateFeedFollowsParams struct {
@@ -76,14 +77,13 @@ func (q *Queries) CreateFeedFollows(ctx context.Context, arg CreateFeedFollowsPa
 		&i.FeedID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.Foreign,
 	)
 	return i, err
 }
 
 const deleteFeedFollows = `-- name: DeleteFeedFollows :exec
 DELETE FROM feed_follows
-WHERE id = ?
+WHERE id = $1
 `
 
 func (q *Queries) DeleteFeedFollows(ctx context.Context, id int64) error {
@@ -92,29 +92,29 @@ func (q *Queries) DeleteFeedFollows(ctx context.Context, id int64) error {
 }
 
 const getAllFeedFollowsByEmail = `-- name: GetAllFeedFollowsByEmail :many
-SELECT f.id, f."name", f.url, f.link, f.description, f.created_at, ff.id
+SELECT f.id, f."name", f.url, f.link, f.description, f.created_at, ff.id AS feed_follow_id
 FROM feed_follows ff
 INNER JOIN feeds f ON ff.feed_id = f.id
 INNER JOIN users u ON ff.user_id = u.id
-WHERE u.email = ?
-LIMIT ?
-OFFSET ?
+WHERE u.email = $1
+LIMIT $2
+OFFSET $3
 `
 
 type GetAllFeedFollowsByEmailParams struct {
 	Email  string `json:"email"`
-	Limit  int64  `json:"limit"`
-	Offset int64  `json:"offset"`
+	Limit  int32  `json:"limit"`
+	Offset int32  `json:"offset"`
 }
 
 type GetAllFeedFollowsByEmailRow struct {
-	ID          int64          `json:"id"`
-	Name        string         `json:"name"`
-	Url         string         `json:"url"`
-	Link        sql.NullString `json:"link"`
-	Description sql.NullString `json:"description"`
-	CreatedAt   int64          `json:"created_at"`
-	ID_2        int64          `json:"id_2"`
+	ID           int64          `json:"id"`
+	Name         string         `json:"name"`
+	Url          string         `json:"url"`
+	Link         sql.NullString `json:"link"`
+	Description  sql.NullString `json:"description"`
+	CreatedAt    time.Time      `json:"created_at"`
+	FeedFollowID int64          `json:"feed_follow_id"`
 }
 
 func (q *Queries) GetAllFeedFollowsByEmail(ctx context.Context, arg GetAllFeedFollowsByEmailParams) ([]GetAllFeedFollowsByEmailRow, error) {
@@ -133,7 +133,7 @@ func (q *Queries) GetAllFeedFollowsByEmail(ctx context.Context, arg GetAllFeedFo
 			&i.Link,
 			&i.Description,
 			&i.CreatedAt,
-			&i.ID_2,
+			&i.FeedFollowID,
 		); err != nil {
 			return nil, err
 		}
@@ -151,13 +151,13 @@ func (q *Queries) GetAllFeedFollowsByEmail(ctx context.Context, arg GetAllFeedFo
 const getAllFeeds = `-- name: GetAllFeeds :many
 SELECT id, name, url
 FROM feeds
-LIMIT ?
-OFFSET ?
+LIMIT $1
+OFFSET $2
 `
 
 type GetAllFeedsParams struct {
-	Limit  int64 `json:"limit"`
-	Offset int64 `json:"offset"`
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
 }
 
 type GetAllFeedsRow struct {
@@ -191,9 +191,9 @@ func (q *Queries) GetAllFeeds(ctx context.Context, arg GetAllFeedsParams) ([]Get
 }
 
 const getFeedByUrl = `-- name: GetFeedByUrl :one
-SELECT id, name, url, user_id, created_at, updated_at, last_fetched_at, description, image_url, image_text, language, link
+SELECT id, name, url, link, description, image_url, image_text, language, user_id, last_fetched_at, created_at, updated_at
 FROM feeds
-WHERE url = ?
+WHERE url = $1
 `
 
 func (q *Queries) GetFeedByUrl(ctx context.Context, url string) (Feed, error) {
@@ -203,15 +203,15 @@ func (q *Queries) GetFeedByUrl(ctx context.Context, url string) (Feed, error) {
 		&i.ID,
 		&i.Name,
 		&i.Url,
-		&i.UserID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.LastFetchedAt,
+		&i.Link,
 		&i.Description,
 		&i.ImageUrl,
 		&i.ImageText,
 		&i.Language,
-		&i.Link,
+		&i.UserID,
+		&i.LastFetchedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
@@ -219,7 +219,7 @@ func (q *Queries) GetFeedByUrl(ctx context.Context, url string) (Feed, error) {
 const getFeedFollows = `-- name: GetFeedFollows :one
 SELECT id
 FROM feed_follows
-WHERE feed_id = ? AND user_id = ?
+WHERE feed_id = $1 AND user_id = $2
 `
 
 type GetFeedFollowsParams struct {
@@ -238,7 +238,7 @@ func (q *Queries) GetFeedFollows(ctx context.Context, arg GetFeedFollowsParams) 
 const getFeedFollowsFromUser = `-- name: GetFeedFollowsFromUser :many
 SELECT id, user_id, feed_id
 FROM feed_follows
-WHERE user_id = ?
+WHERE user_id = $1
 `
 
 type GetFeedFollowsFromUserRow struct {
@@ -273,8 +273,8 @@ func (q *Queries) GetFeedFollowsFromUser(ctx context.Context, userID int64) ([]G
 const getNextFeedsToFetch = `-- name: GetNextFeedsToFetch :many
 SELECT id, name, url
 FROM feeds
-ORDER BY last_fetched_at ASC
-LIMIT ?
+ORDER BY last_fetched_at ASC NULLS FIRST
+LIMIT $1
 `
 
 type GetNextFeedsToFetchRow struct {
@@ -283,7 +283,7 @@ type GetNextFeedsToFetchRow struct {
 	Url  string `json:"url"`
 }
 
-func (q *Queries) GetNextFeedsToFetch(ctx context.Context, limit int64) ([]GetNextFeedsToFetchRow, error) {
+func (q *Queries) GetNextFeedsToFetch(ctx context.Context, limit int32) ([]GetNextFeedsToFetchRow, error) {
 	rows, err := q.db.QueryContext(ctx, getNextFeedsToFetch, limit)
 	if err != nil {
 		return nil, err
@@ -309,9 +309,9 @@ func (q *Queries) GetNextFeedsToFetch(ctx context.Context, limit int64) ([]GetNe
 const markFeedFetched = `-- name: MarkFeedFetched :exec
 UPDATE feeds
 SET
-	last_fetched_at = unixepoch(),
-	updated_at = unixepoch()
-WHERE id = ?
+	last_fetched_at = NOW(),
+	updated_at = NOW()
+WHERE id = $1
 `
 
 func (q *Queries) MarkFeedFetched(ctx context.Context, id int64) error {

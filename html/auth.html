@@ -5,50 +5,15 @@
 {{ define "body" }}
 <section class="auth">
   <div class="auth-content">
-    <h2>{{ if .Register }} Create Account {{ else }} Welcome Back {{ end }}</h2>
-    <form action={{ if .Register }}"/users/register"{{ else }}"/users/login"{{end}} method="post">
-      <div class="form-group">
-        <label for="email">Email Address</label>
-        <input id="email" name="email" type="email" required placeholder="your@email.com" autocomplete="email" />
-      </div>
+    <h2>Welcome to Nyusu</h2>
 
-      {{ if .Register }}
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input id="password" name="password" type="password" required placeholder="Enter your password"
-          autocomplete="new-password" />
-      </div>
-      <div class="form-group">
-        <label for="confirmPassword">Confirm Password</label>
-        <input id="confirmPassword" name="confirmPassword" type="password" required placeholder="Confirm your password"
-          autocomplete="new-password" />
-      </div>
-      {{ else }}
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input id="password" name="password" type="password" required placeholder="Enter your password"
-          autocomplete="current-password" />
-      </div>
-      {{ end }}
-
-      {{ if .Error }}
-      <div class="error">
-        {{ .Error }}
-      </div>
-      {{ end }}
-
-      <button type="submit">
-        {{ if .Register }} Create Account {{ else }} Sign In {{ end }}
-      </button>
-    </form>
-
-    <div class="auth-switch">
-      {{ if .Register }}
-      Already have an account? <a href="/login">Sign in</a>
-      {{ else }}
-      Don't have an account? <a href="/register">Create one</a>
-      {{ end }}
+    {{ if .Error }}
+    <div class="error">
+      {{ .Error }}
     </div>
+    {{ end }}
+
+    <a href="/login" class="login-button">Login with Odin</a>
   </div>
 </section>
 {{ end }}

@@ -1,9 +1,6 @@
 # Build stage
 FROM golang:1.24-alpine AS builder
 
-# Install build dependencies for CGO and SQLite
-RUN apk add --no-cache gcc musl-dev sqlite-dev
-
 WORKDIR /build
 
 # Copy go mod files
@@ -13,19 +10,16 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Build with CGO enabled for SQLite support
-RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o nyusu .
+# Build without CGO (pgx is pure Go)
+RUN CGO_ENABLED=0 GOOS=linux go build -o nyusu .
 
 # Runtime stage
 FROM alpine:latest
 
 # Install runtime dependencies
-RUN apk --no-cache add ca-certificates sqlite-libs
+RUN apk --no-cache add ca-certificates
 
 WORKDIR /app
-
-# Create data directory for SQLite database
-RUN mkdir -p /data
 
 # Copy binary from builder
 COPY --from=builder /build/nyusu .
@@ -39,7 +33,6 @@ COPY --from=builder /build/sql ./sql
 EXPOSE 8888
 
 # Set default environment variables
-ENV DB_URL=/data/nyusu.db
 ENV PORT=8888
 ENV ENVIRONMENT=production
 ENV SCRAPPER_TICK=300

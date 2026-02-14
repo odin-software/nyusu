@@ -6,30 +6,30 @@ package database
 
 import (
 	"database/sql"
+	"time"
 )
 
 type Feed struct {
 	ID            int64          `json:"id"`
 	Name          string         `json:"name"`
 	Url           string         `json:"url"`
-	UserID        int64          `json:"user_id"`
-	CreatedAt     int64          `json:"created_at"`
-	UpdatedAt     int64          `json:"updated_at"`
-	LastFetchedAt sql.NullInt64  `json:"last_fetched_at"`
+	Link          sql.NullString `json:"link"`
 	Description   sql.NullString `json:"description"`
 	ImageUrl      sql.NullString `json:"image_url"`
 	ImageText     sql.NullString `json:"image_text"`
 	Language      sql.NullString `json:"language"`
-	Link          sql.NullString `json:"link"`
+	UserID        int64          `json:"user_id"`
+	LastFetchedAt sql.NullTime   `json:"last_fetched_at"`
+	CreatedAt     time.Time      `json:"created_at"`
+	UpdatedAt     time.Time      `json:"updated_at"`
 }
 
 type FeedFollow struct {
-	ID        int64       `json:"id"`
-	UserID    int64       `json:"user_id"`
-	FeedID    int64       `json:"feed_id"`
-	CreatedAt int64       `json:"created_at"`
-	UpdatedAt int64       `json:"updated_at"`
-	Foreign   interface{} `json:"foreign"`
+	ID        int64     `json:"id"`
+	UserID    int64     `json:"user_id"`
+	FeedID    int64     `json:"feed_id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type Post struct {
@@ -37,34 +37,34 @@ type Post struct {
 	Title       string         `json:"title"`
 	Url         string         `json:"url"`
 	Description sql.NullString `json:"description"`
-	FeedID      int64          `json:"feed_id"`
-	CreatedAt   int64          `json:"created_at"`
-	UpdatedAt   int64          `json:"updated_at"`
-	PublishedAt int64          `json:"published_at"`
 	Content     sql.NullString `json:"content"`
 	Author      string         `json:"author"`
+	FeedID      int64          `json:"feed_id"`
+	PublishedAt time.Time      `json:"published_at"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
 }
 
 type Session struct {
-	ID        int64  `json:"id"`
-	Token     string `json:"token"`
-	UserID    int64  `json:"user_id"`
-	CreatedAt int64  `json:"created_at"`
-	ExpiresAt int64  `json:"expires_at"`
+	ID        int64     `json:"id"`
+	Token     string    `json:"token"`
+	UserID    int64     `json:"user_id"`
+	CreatedAt time.Time `json:"created_at"`
+	ExpiresAt time.Time `json:"expires_at"`
 }
 
 type User struct {
-	ID        int64  `json:"id"`
-	Name      string `json:"name"`
-	Email     string `json:"email"`
-	Password  string `json:"password"`
-	CreatedAt int64  `json:"created_at"`
-	UpdatedAt int64  `json:"updated_at"`
+	ID        int64     `json:"id"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	Sub       string    `json:"sub"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type UsersBookmark struct {
-	ID        int64 `json:"id"`
-	PostID    int64 `json:"post_id"`
-	UserID    int64 `json:"user_id"`
-	CreatedAt int64 `json:"created_at"`
+	ID        int64     `json:"id"`
+	PostID    int64     `json:"post_id"`
+	UserID    int64     `json:"user_id"`
+	CreatedAt time.Time `json:"created_at"`
 }

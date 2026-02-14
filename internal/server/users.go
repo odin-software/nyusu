@@ -2,20 +2,21 @@ package server
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/odin-software/nyusu/internal/database"
 )
 
-type UserWithoutPassword struct {
-	ID        int64  `json:"id"`
-	Name      string `json:"name"`
-	Email     string `json:"email"`
-	CreatedAt int64  `json:"created_at"`
-	UpdatedAt int64  `json:"updated_at"`
+type UserResponse struct {
+	ID        int64     `json:"id"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 func (cfg *APIConfig) GetAuthUser(w http.ResponseWriter, r *http.Request, user database.User) {
-	uwp := UserWithoutPassword{
+	uwp := UserResponse{
 		ID:        user.ID,
 		Name:      user.Name,
 		Email:     user.Email,

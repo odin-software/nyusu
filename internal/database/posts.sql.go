@@ -8,11 +8,12 @@ package database
 import (
 	"context"
 	"database/sql"
+	"time"
 )
 
 const bookmarkPost = `-- name: BookmarkPost :exec
 INSERT INTO users_bookmarks (user_id, post_id)
-VALUES (?, ?)
+VALUES ($1, $2)
 `
 
 type BookmarkPostParams struct {
@@ -27,8 +28,8 @@ func (q *Queries) BookmarkPost(ctx context.Context, arg BookmarkPostParams) erro
 
 const createPost = `-- name: CreatePost :one
 INSERT INTO posts (title, url, description, author, feed_id, published_at)
-VALUES (?, ?, ?, ?, ?, ?)
-RETURNING id, title, url, description, feed_id, created_at, updated_at, published_at, content, author
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING id, title, url, description, content, author, feed_id, published_at, created_at, updated_at
 `
 
 type CreatePostParams struct {
@@ -37,7 +38,7 @@ type CreatePostParams struct {
 	Description sql.NullString `json:"description"`
 	Author      string         `json:"author"`
 	FeedID      int64          `json:"feed_id"`
-	PublishedAt int64          `json:"published_at"`
+	PublishedAt time.Time      `json:"published_at"`
 }
 
 func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (Post, error) {
@@ -55,12 +56,12 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (Post, e
 		&i.Title,
 		&i.Url,
 		&i.Description,
-		&i.FeedID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.PublishedAt,
 		&i.Content,
 		&i.Author,
+		&i.FeedID,
+		&i.PublishedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
@@ -70,24 +71,24 @@ SELECT DISTINCT p.id, p.title, p.url, p.published_at, f.name
 FROM users_bookmarks ub
 INNER JOIN posts p ON p.id = ub.post_id
 INNER JOIN feeds f ON p.feed_id = f.id
-WHERE ub.user_id = ?
+WHERE ub.user_id = $1
 ORDER BY ub.created_at DESC
-LIMIT ?
-OFFSET ?
+LIMIT $2
+OFFSET $3
 `
 
 type GetBookmarkedPostsByDateParams struct {
 	UserID int64 `json:"user_id"`
-	Limit  int64 `json:"limit"`
-	Offset int64 `json:"offset"`
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
 }
 
 type GetBookmarkedPostsByDateRow struct {
-	ID          int64  `json:"id"`
-	Title       string `json:"title"`
-	Url         string `json:"url"`
-	PublishedAt int64  `json:"published_at"`
-	Name        string `json:"name"`
+	ID          int64     `json:"id"`
+	Title       string    `json:"title"`
+	Url         string    `json:"url"`
+	PublishedAt time.Time `json:"published_at"`
+	Name        string    `json:"name"`
 }
 
 func (q *Queries) GetBookmarkedPostsByDate(ctx context.Context, arg GetBookmarkedPostsByDateParams) ([]GetBookmarkedPostsByDateRow, error) {
@@ -123,23 +124,23 @@ const getBookmarkedPostsByPublished = `-- name: GetBookmarkedPostsByPublished :m
 SELECT DISTINCT p.id, p.title, p.url, p.published_at
 FROM users_bookmarks ub
 INNER JOIN posts p ON p.id = ub.post_id
-WHERE ub.user_id = ?
+WHERE ub.user_id = $1
 ORDER BY p.published_at DESC
-LIMIT ?
-OFFSET ?
+LIMIT $2
+OFFSET $3
 `
 
 type GetBookmarkedPostsByPublishedParams struct {
 	UserID int64 `json:"user_id"`
-	Limit  int64 `json:"limit"`
-	Offset int64 `json:"offset"`
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
 }
 
 type GetBookmarkedPostsByPublishedRow struct {
-	ID          int64  `json:"id"`
-	Title       string `json:"title"`
-	Url         string `json:"url"`
-	PublishedAt int64  `json:"published_at"`
+	ID          int64     `json:"id"`
+	Title       string    `json:"title"`
+	Url         string    `json:"url"`
+	PublishedAt time.Time `json:"published_at"`
 }
 
 func (q *Queries) GetBookmarkedPostsByPublished(ctx context.Context, arg GetBookmarkedPostsByPublishedParams) ([]GetBookmarkedPostsByPublishedRow, error) {
@@ -176,25 +177,25 @@ FROM feed_follows ff
 INNER JOIN users u ON ff.user_id = u.id
 INNER JOIN feeds f ON ff.feed_id = f.id
 INNER JOIN posts p ON p.feed_id = f.id
-WHERE u.email = ?
+WHERE u.email = $1
 ORDER BY p.published_at DESC
-LIMIT ?
-OFFSET ?
+LIMIT $2
+OFFSET $3
 `
 
 type GetPostsByUserParams struct {
 	Email  string `json:"email"`
-	Limit  int64  `json:"limit"`
-	Offset int64  `json:"offset"`
+	Limit  int32  `json:"limit"`
+	Offset int32  `json:"offset"`
 }
 
 type GetPostsByUserRow struct {
-	ID          int64  `json:"id"`
-	Name        string `json:"name"`
-	Title       string `json:"title"`
-	Author      string `json:"author"`
-	Url         string `json:"url"`
-	PublishedAt int64  `json:"published_at"`
+	ID          int64     `json:"id"`
+	Name        string    `json:"name"`
+	Title       string    `json:"title"`
+	Author      string    `json:"author"`
+	Url         string    `json:"url"`
+	PublishedAt time.Time `json:"published_at"`
 }
 
 func (q *Queries) GetPostsByUser(ctx context.Context, arg GetPostsByUserParams) ([]GetPostsByUserRow, error) {
@@ -233,25 +234,25 @@ FROM feed_follows ff
 INNER JOIN feeds f ON ff.feed_id = f.id
 INNER JOIN posts p ON p.feed_id = f.id
 INNER JOIN users u ON ff.user_id = u.id
-WHERE u.email = ? AND f.id = ?
+WHERE u.email = $1 AND f.id = $2
 ORDER BY p.published_at DESC
-LIMIT ?
-OFFSET ?
+LIMIT $3
+OFFSET $4
 `
 
 type GetPostsByUserAndFeedParams struct {
 	Email  string `json:"email"`
 	ID     int64  `json:"id"`
-	Limit  int64  `json:"limit"`
-	Offset int64  `json:"offset"`
+	Limit  int32  `json:"limit"`
+	Offset int32  `json:"offset"`
 }
 
 type GetPostsByUserAndFeedRow struct {
-	ID          int64  `json:"id"`
-	Title       string `json:"title"`
-	Name        string `json:"name"`
-	Url         string `json:"url"`
-	PublishedAt int64  `json:"published_at"`
+	ID          int64     `json:"id"`
+	Title       string    `json:"title"`
+	Name        string    `json:"name"`
+	Url         string    `json:"url"`
+	PublishedAt time.Time `json:"published_at"`
 }
 
 func (q *Queries) GetPostsByUserAndFeed(ctx context.Context, arg GetPostsByUserAndFeedParams) ([]GetPostsByUserAndFeedRow, error) {
@@ -296,26 +297,26 @@ INNER JOIN feeds f ON ff.feed_id = f.id
 INNER JOIN posts p ON p.feed_id = f.id
 INNER JOIN users u ON ff.user_id = u.id
 LEFT JOIN users_bookmarks ub ON ub.post_id = p.id AND ub.user_id = u.id
-WHERE u.email = ? AND f.id = ?
+WHERE u.email = $1 AND f.id = $2
 ORDER BY p.published_at DESC
-LIMIT ?
-OFFSET ?
+LIMIT $3
+OFFSET $4
 `
 
 type GetPostsByUserAndFeedWithBookmarksParams struct {
 	Email  string `json:"email"`
 	ID     int64  `json:"id"`
-	Limit  int64  `json:"limit"`
-	Offset int64  `json:"offset"`
+	Limit  int32  `json:"limit"`
+	Offset int32  `json:"offset"`
 }
 
 type GetPostsByUserAndFeedWithBookmarksRow struct {
-	ID           int64  `json:"id"`
-	Title        string `json:"title"`
-	Name         string `json:"name"`
-	Url          string `json:"url"`
-	PublishedAt  int64  `json:"published_at"`
-	IsBookmarked int64  `json:"is_bookmarked"`
+	ID           int64     `json:"id"`
+	Title        string    `json:"title"`
+	Name         string    `json:"name"`
+	Url          string    `json:"url"`
+	PublishedAt  time.Time `json:"published_at"`
+	IsBookmarked int32     `json:"is_bookmarked"`
 }
 
 func (q *Queries) GetPostsByUserAndFeedWithBookmarks(ctx context.Context, arg GetPostsByUserAndFeedWithBookmarksParams) ([]GetPostsByUserAndFeedWithBookmarksRow, error) {
@@ -361,27 +362,27 @@ INNER JOIN users u ON ff.user_id = u.id
 INNER JOIN feeds f ON ff.feed_id = f.id
 INNER JOIN posts p ON p.feed_id = f.id
 LEFT JOIN users_bookmarks ub ON ub.post_id = p.id AND ub.user_id = u.id
-WHERE u.email = ?
+WHERE u.email = $1
 ORDER BY p.published_at DESC
-LIMIT ?
-OFFSET ?
+LIMIT $2
+OFFSET $3
 `
 
 type GetPostsByUserWithBookmarksParams struct {
 	Email  string `json:"email"`
-	Limit  int64  `json:"limit"`
-	Offset int64  `json:"offset"`
+	Limit  int32  `json:"limit"`
+	Offset int32  `json:"offset"`
 }
 
 type GetPostsByUserWithBookmarksRow struct {
-	ID           int64  `json:"id"`
-	FeedID       int64  `json:"feed_id"`
-	Name         string `json:"name"`
-	Title        string `json:"title"`
-	Author       string `json:"author"`
-	Url          string `json:"url"`
-	PublishedAt  int64  `json:"published_at"`
-	IsBookmarked int64  `json:"is_bookmarked"`
+	ID           int64     `json:"id"`
+	FeedID       int64     `json:"feed_id"`
+	Name         string    `json:"name"`
+	Title        string    `json:"title"`
+	Author       string    `json:"author"`
+	Url          string    `json:"url"`
+	PublishedAt  time.Time `json:"published_at"`
+	IsBookmarked int32     `json:"is_bookmarked"`
 }
 
 func (q *Queries) GetPostsByUserWithBookmarks(ctx context.Context, arg GetPostsByUserWithBookmarksParams) ([]GetPostsByUserWithBookmarksRow, error) {
@@ -418,7 +419,7 @@ func (q *Queries) GetPostsByUserWithBookmarks(ctx context.Context, arg GetPostsB
 
 const unbookmarkPost = `-- name: UnbookmarkPost :exec
 DELETE FROM users_bookmarks
-WHERE user_id = ? AND post_id = ?
+WHERE user_id = $1 AND post_id = $2
 `
 
 type UnbookmarkPostParams struct {

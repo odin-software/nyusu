@@ -51,20 +51,20 @@ func respondWithJSON(w http.ResponseWriter, status int, payload interface{}) {
 	w.Write(data)
 }
 
-func GetPageSizeNumber(r *http.Request) (limit int64, offset int64) {
+func GetPageSizeNumber(r *http.Request) (limit int32, offset int32) {
 	q := r.URL.Query()
 	ps := q.Get("pageSize")
 	pn := q.Get("pageNumber")
-	pageSize, err := strconv.ParseInt(ps, 10, 64)
+	pageSize, err := strconv.ParseInt(ps, 10, 32)
 	if err != nil {
 		pageSize = 20
 	}
-	pageNumber, err := strconv.ParseInt(pn, 10, 64)
+	pageNumber, err := strconv.ParseInt(pn, 10, 32)
 	if err != nil {
 		pageNumber = 0
 	}
-	limit = pageSize
-	offset = int64(math.Max(float64((pageNumber-1)*limit), 0.0))
+	limit = int32(pageSize)
+	offset = int32(math.Max(float64((pageNumber-1)*int64(limit)), 0.0))
 	return
 }
 

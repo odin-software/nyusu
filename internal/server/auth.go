@@ -5,52 +5,136 @@ import (
 	"encoding/hex"
 	"log"
 	"net/http"
-	"regexp"
 	"strings"
 	"time"
 	"unicode"
 
+	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/odin-software/nyusu/internal/database"
-	"golang.org/x/crypto/bcrypt"
 )
 
 const SessionCookieName = "session_id"
+const OIDCStateCookieName = "oidc_state"
 
-type TokenObj struct {
-	Token string `json:"token"`
+// LoginRedirect initiates the OIDC login flow by redirecting to the identity provider.
+func (cfg *APIConfig) LoginRedirect(w http.ResponseWriter, r *http.Request) {
+	// Check if already authenticated
+	cookie, err := r.Cookie(SessionCookieName)
+	if err == nil {
+		_, err := cfg.DB.GetSessionByToken(cfg.ctx, cookie.Value)
+		if err == nil {
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
+	}
+
+	state, err := GenerateSecureToken()
+	if err != nil {
+		log.Print("Failed to generate OIDC state:", err)
+		internalServerErrorHandler(w)
+		return
+	}
+
+	secure, sameSite := cfg.GetSecureCookieSettings()
+	http.SetCookie(w, &http.Cookie{
+		Name:     OIDCStateCookieName,
+		Value:    state,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   secure,
+		SameSite: sameSite,
+		MaxAge:   300, // 5 minutes
+	})
+
+	http.Redirect(w, r, cfg.OAuth2Config.AuthCodeURL(state), http.StatusFound)
 }
 
-func (cfg *APIConfig) LoginUser(w http.ResponseWriter, r *http.Request) {
-	email := SanitizeInput(r.FormValue("email"))
-	password := r.FormValue("password")
-
-	// Basic validation
-	if email == "" || password == "" {
-		http.Redirect(w, r, `/login?error=email and password are required`, http.StatusSeeOther)
-		return
-	}
-
-	user, err := cfg.DB.GetUserByEmail(cfg.ctx, email)
+// OIDCCallback handles the callback from the identity provider after authentication.
+func (cfg *APIConfig) OIDCCallback(w http.ResponseWriter, r *http.Request) {
+	// Verify state parameter
+	stateCookie, err := r.Cookie(OIDCStateCookieName)
 	if err != nil {
-		http.Redirect(w, r, `/login?error=invalid credentials`, http.StatusSeeOther)
-		return
-	}
-	b := CheckPasswordHash(password, user.Password)
-	if !b {
-		http.Redirect(w, r, `/login?error=invalid credentials`, http.StatusSeeOther)
+		log.Print("Missing OIDC state cookie")
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
-	// Generate secure session token
+	if r.URL.Query().Get("state") != stateCookie.Value {
+		log.Print("OIDC state mismatch")
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	// Clear state cookie
+	secure, sameSite := cfg.GetSecureCookieSettings()
+	http.SetCookie(w, &http.Cookie{
+		Name:     OIDCStateCookieName,
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   secure,
+		SameSite: sameSite,
+		MaxAge:   -1,
+	})
+
+	// Exchange code for tokens
+	oauth2Token, err := cfg.OAuth2Config.Exchange(cfg.ctx, r.URL.Query().Get("code"))
+	if err != nil {
+		log.Print("Failed to exchange OIDC code:", err)
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	// Extract and verify ID token
+	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
+	if !ok {
+		log.Print("No id_token in OIDC response")
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	verifier := cfg.OIDCProvider.Verifier(&oidc.Config{ClientID: cfg.Env.OIDCClientID})
+	idToken, err := verifier.Verify(cfg.ctx, rawIDToken)
+	if err != nil {
+		log.Print("Failed to verify OIDC ID token:", err)
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	// Extract claims
+	var claims struct {
+		Sub   string `json:"sub"`
+		Email string `json:"email"`
+		Name  string `json:"name"`
+	}
+	if err := idToken.Claims(&claims); err != nil {
+		log.Print("Failed to parse OIDC claims:", err)
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	// Get or create user by OIDC subject
+	user, err := cfg.DB.GetOrCreateUserBySub(cfg.ctx, database.GetOrCreateUserBySubParams{
+		Name:  claims.Name,
+		Email: claims.Email,
+		Sub:   claims.Sub,
+	})
+	if err != nil {
+		log.Print("Failed to get/create user:", err)
+		internalServerErrorHandler(w)
+		return
+	}
+
+	// Generate session token
 	sessionToken, err := GenerateSecureToken()
 	if err != nil {
 		log.Print("Failed to generate session token:", err)
-		http.Redirect(w, r, `/login?error=server error`, http.StatusSeeOther)
+		internalServerErrorHandler(w)
 		return
 	}
 
 	// Create session in database (expires in 3 days)
-	expiresAt := time.Now().Add(72 * time.Hour).Unix()
+	expiresAt := time.Now().Add(72 * time.Hour)
 	_, err = cfg.DB.CreateSession(cfg.ctx, database.CreateSessionParams{
 		Token:     sessionToken,
 		UserID:    user.ID,
@@ -58,12 +142,11 @@ func (cfg *APIConfig) LoginUser(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Print("Failed to create session:", err)
-		http.Redirect(w, r, `/login?error=server error`, http.StatusSeeOther)
+		internalServerErrorHandler(w)
 		return
 	}
 
-	// Set secure cookie with the session token
-	secure, sameSite := cfg.GetSecureCookieSettings()
+	// Set session cookie
 	http.SetCookie(w, &http.Cookie{
 		Name:     SessionCookieName,
 		Value:    sessionToken,
@@ -100,80 +183,6 @@ func (cfg *APIConfig) LogoutUser(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-func (cfg *APIConfig) RegisterUser(w http.ResponseWriter, r *http.Request) {
-	email := SanitizeInput(r.FormValue("email"))
-	password := r.FormValue("password")
-	confirmPassword := r.FormValue("confirmPassword")
-
-	if !ValidateEmail(email) {
-		http.Redirect(w, r, `/register?error=invalid email format`, http.StatusSeeOther)
-		return
-	}
-
-	if valid, errMsg := ValidatePassword(password); !valid {
-		http.Redirect(w, r, `/register?error=`+errMsg, http.StatusSeeOther)
-		return
-	}
-
-	if password != confirmPassword {
-		http.Redirect(w, r, `/register?error=passwords do not match`, http.StatusSeeOther)
-		return
-	}
-	_, err := cfg.DB.GetUserByEmail(cfg.ctx, email)
-	if err == nil {
-		http.Redirect(w, r, `/register?error=user already exists`, http.StatusSeeOther)
-		return
-	}
-	hashedPassword, err := HashPassword(password)
-	if err != nil {
-		log.Print(err)
-		badRequestHandler(w)
-		return
-	}
-	user, err := cfg.DB.CreateUser(cfg.ctx, database.CreateUserParams{
-		Email:    email,
-		Password: hashedPassword,
-	})
-	if err != nil {
-		log.Print(err)
-		internalServerErrorHandler(w)
-		return
-	}
-
-	sessionToken, err := GenerateSecureToken()
-	if err != nil {
-		log.Print("Failed to generate session token:", err)
-		http.Redirect(w, r, `/register?error=server error`, http.StatusSeeOther)
-		return
-	}
-
-	// Create session in database (expires in 3 days)
-	expiresAt := time.Now().Add(72 * time.Hour).Unix()
-	_, err = cfg.DB.CreateSession(cfg.ctx, database.CreateSessionParams{
-		Token:     sessionToken,
-		UserID:    user.ID,
-		ExpiresAt: expiresAt,
-	})
-	if err != nil {
-		log.Print("Failed to create session:", err)
-		http.Redirect(w, r, `/register?error=server error`, http.StatusSeeOther)
-		return
-	}
-
-	secure, sameSite := cfg.GetSecureCookieSettings()
-	http.SetCookie(w, &http.Cookie{
-		Name:     SessionCookieName,
-		Value:    sessionToken,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   secure,
-		SameSite: sameSite,
-		MaxAge:   60 * 60 * 24 * 3, // 3 days
-	})
-
-	http.Redirect(w, r, "/", http.StatusFound)
-}
-
 func (cfg *APIConfig) MiddlewareAuth(handler AuthHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie(SessionCookieName)
@@ -202,12 +211,12 @@ func (cfg *APIConfig) MiddlewareAuth(handler AuthHandler) http.HandlerFunc {
 
 		// Convert the session data to a user object
 		user := database.User{
-			ID:        sessionData.ID_2,
+			ID:        sessionData.UserID2,
 			Name:      sessionData.Name,
 			Email:     sessionData.Email,
-			Password:  sessionData.Password,
-			CreatedAt: sessionData.CreatedAt_2,
-			UpdatedAt: sessionData.UpdatedAt,
+			Sub:       sessionData.Sub,
+			CreatedAt: sessionData.UserCreatedAt,
+			UpdatedAt: sessionData.UserUpdatedAt,
 		}
 
 		handler(w, r, user)
@@ -250,63 +259,6 @@ func (cfg *APIConfig) OPTIONS(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 
 	http.Error(w, "No Content", http.StatusNoContent)
-}
-
-func HashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	return string(bytes), err
-}
-
-func CheckPasswordHash(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
-}
-
-// ValidateEmail checks if email format is valid
-func ValidateEmail(email string) bool {
-	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
-	return emailRegex.MatchString(email)
-}
-
-// ValidatePassword checks password strength requirements
-func ValidatePassword(password string) (bool, string) {
-	if len(password) < 8 {
-		return false, "password must be at least 8 characters long"
-	}
-
-	if len(password) > 128 {
-		return false, "password must be less than 128 characters long"
-	}
-
-	var hasUpper, hasLower, hasNumber, hasSpecial bool
-
-	for _, char := range password {
-		switch {
-		case unicode.IsUpper(char):
-			hasUpper = true
-		case unicode.IsLower(char):
-			hasLower = true
-		case unicode.IsDigit(char):
-			hasNumber = true
-		case unicode.IsPunct(char) || unicode.IsSymbol(char):
-			hasSpecial = true
-		}
-	}
-
-	if !hasUpper {
-		return false, "password must contain at least one uppercase letter"
-	}
-	if !hasLower {
-		return false, "password must contain at least one lowercase letter"
-	}
-	if !hasNumber {
-		return false, "password must contain at least one number"
-	}
-	if !hasSpecial {
-		return false, "password must contain at least one special character"
-	}
-
-	return true, ""
 }
 
 func SanitizeInput(input string) string {

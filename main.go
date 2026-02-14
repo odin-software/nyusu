@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/odin-software/nyusu/internal/server"
 )
 
@@ -19,8 +19,8 @@ func main() {
 
 	// Page endpoints.
 	mux.HandleFunc("GET /", cfg.GetHome)
-	mux.HandleFunc("GET /login", cfg.GetLogin)
-	mux.HandleFunc("GET /register", cfg.GetRegister)
+	mux.HandleFunc("GET /login", cfg.LoginRedirect)
+	mux.HandleFunc("GET /auth/callback", cfg.OIDCCallback)
 	mux.HandleFunc("GET /add", cfg.GetAddFeed)
 	mux.HandleFunc("GET /feeds", cfg.GetAllFeeds)
 	mux.HandleFunc("GET /feeds/{feedId}", cfg.GetFeedPosts)
@@ -28,9 +28,7 @@ func main() {
 	mux.HandleFunc("GET /about", cfg.GetAbout)
 
 	// Action endpoints.
-	mux.HandleFunc("POST /users/login", cfg.LoginUser)
 	mux.HandleFunc("POST /users/logout", cfg.LogoutUser)
-	mux.HandleFunc("POST /users/register", cfg.RegisterUser)
 	mux.HandleFunc("POST /feed", cfg.CreateFeed)
 	mux.HandleFunc("POST /unsubscribe/{feedFollowId}", cfg.UnsubscribeFeed)
 

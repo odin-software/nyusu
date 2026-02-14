@@ -19,8 +19,7 @@ func checkError(err error) {
 
 func getTemplateFuncMap() template.FuncMap {
 	return template.FuncMap{
-		"date": func(i int64) string {
-			t := time.Unix(i, 0)
+		"date": func(t time.Time) string {
 			return t.Format("02-01-2006")
 		},
 	}
@@ -39,7 +38,6 @@ type IndexData struct {
 
 type AuthPageData struct {
 	Authenticated bool
-	Register      bool
 	Error         string
 }
 
@@ -107,46 +105,6 @@ func (cfg *APIConfig) getHome(w http.ResponseWriter, r *http.Request, auth AuthR
 
 func (cfg *APIConfig) GetHome(w http.ResponseWriter, r *http.Request) {
 	cfg.MiddlewareWebAuth(cfg.getHome)(w, r)
-}
-
-func (cfg *APIConfig) getLogin(w http.ResponseWriter, r *http.Request, auth AuthResult) {
-	query := r.URL.Query()
-	error := query.Get("error")
-	t, err := template.New("layout").ParseFiles("html/layout.html", "html/auth.html")
-	if err != nil {
-		panic(err)
-	}
-	err = t.Execute(w, AuthPageData{
-		Register: false,
-		Error:    error,
-	})
-	if err != nil {
-		panic(err)
-	}
-}
-
-func (cfg *APIConfig) GetLogin(w http.ResponseWriter, r *http.Request) {
-	cfg.RedirectIfAuth(cfg.getLogin)(w, r)
-}
-
-func (cfg *APIConfig) getRegister(w http.ResponseWriter, r *http.Request, auth AuthResult) {
-	query := r.URL.Query()
-	error := query.Get("error")
-	t, err := template.New("layout").ParseFiles("html/layout.html", "html/auth.html")
-	if err != nil {
-		panic(err)
-	}
-	err = t.Execute(w, AuthPageData{
-		Register: true,
-		Error:    error,
-	})
-	if err != nil {
-		panic(err)
-	}
-}
-
-func (cfg *APIConfig) GetRegister(w http.ResponseWriter, r *http.Request) {
-	cfg.RedirectIfAuth(cfg.getRegister)(w, r)
 }
 
 func (cfg *APIConfig) getAddFeed(w http.ResponseWriter, r *http.Request, auth AuthResult) {
@@ -245,7 +203,7 @@ func (cfg *APIConfig) getBookmarks(w http.ResponseWriter, r *http.Request, auth 
 
 	limit, offset := GetPageSizeNumber(r)
 	posts, err := cfg.DB.GetBookmarkedPostsByDate(cfg.ctx, database.GetBookmarkedPostsByDateParams{
-		UserID: auth.SessionData.ID_2,
+		UserID: auth.SessionData.UserID2,
 		Limit:  limit,
 		Offset: offset,
 	})

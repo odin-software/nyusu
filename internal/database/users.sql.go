@@ -9,25 +9,30 @@ import (
 	"context"
 )
 
-const createUser = `-- name: CreateUser :one
-INSERT INTO users (name, email, password)
-VALUES ("", ?, ?)
-RETURNING id, name, email, password, created_at, updated_at
+const getOrCreateUserBySub = `-- name: GetOrCreateUserBySub :one
+INSERT INTO users (name, email, sub)
+VALUES ($1, $2, $3)
+ON CONFLICT (sub) DO UPDATE SET
+  name = EXCLUDED.name,
+  email = EXCLUDED.email,
+  updated_at = NOW()
+RETURNING id, name, email, sub, created_at, updated_at
 `
 
-type CreateUserParams struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+type GetOrCreateUserBySubParams struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Sub   string `json:"sub"`
 }
 
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, createUser, arg.Email, arg.Password)
+func (q *Queries) GetOrCreateUserBySub(ctx context.Context, arg GetOrCreateUserBySubParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, getOrCreateUserBySub, arg.Name, arg.Email, arg.Sub)
 	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
 		&i.Email,
-		&i.Password,
+		&i.Sub,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -35,9 +40,9 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, name, email, password, created_at, updated_at 
+SELECT id, name, email, sub, created_at, updated_at
 FROM users
-WHERE email = ?
+WHERE email = $1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -47,7 +52,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.ID,
 		&i.Name,
 		&i.Email,
-		&i.Password,
+		&i.Sub,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -55,9 +60,9 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 }
 
 const getUserById = `-- name: GetUserById :one
-SELECT id, name, email, password, created_at, updated_at 
+SELECT id, name, email, sub, created_at, updated_at
 FROM users
-WHERE id = ?
+WHERE id = $1
 `
 
 func (q *Queries) GetUserById(ctx context.Context, id int64) (User, error) {
@@ -67,7 +72,27 @@ func (q *Queries) GetUserById(ctx context.Context, id int64) (User, error) {
 		&i.ID,
 		&i.Name,
 		&i.Email,
-		&i.Password,
+		&i.Sub,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getUserBySub = `-- name: GetUserBySub :one
+SELECT id, name, email, sub, created_at, updated_at
+FROM users
+WHERE sub = $1
+`
+
+func (q *Queries) GetUserBySub(ctx context.Context, sub string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserBySub, sub)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.Sub,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
