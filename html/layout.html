@@ -10,6 +10,16 @@
 
   {{ template "css" }}
   <title>Nyusu</title>
+  <style>
+    :root {
+      --primary-color: {{ .Branding.PrimaryColor }};
+      --secondary-color: {{ .Branding.SecondaryColor }};
+      --tertiary-color: {{ .Branding.TertiaryColor }};
+      --quartary-color: {{ .Branding.QuartaryColor }};
+      --card-bg: {{ .Branding.CardBg }};
+      --border-color: {{ .Branding.BorderColor }};
+    }
+  </style>
 
 </head>
 

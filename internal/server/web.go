@@ -37,39 +37,44 @@ func TestRssParsing(url string) {
 	log.Println(r.Channel.Items[0].Creator)
 }
 
-type IndexData struct {
+type BaseData struct {
 	Authenticated bool
-	Posts         []database.GetPostsByUserWithBookmarksRow
-	Pagination    Pagination
+	Branding      Branding
+}
+
+type IndexData struct {
+	BaseData
+	Posts      []database.GetPostsByUserWithBookmarksRow
+	Pagination Pagination
 }
 
 type AuthPageData struct {
-	Authenticated bool
-	Error         string
+	BaseData
+	Error string
 }
 
 type AddFeedData struct {
-	Authenticated bool
-	Error         string
+	BaseData
+	Error string
 }
 
 type AllFeedsData struct {
-	Authenticated bool
-	Error         string
-	Feeds         []database.GetAllFeedFollowsByEmailRow
-	Pagination    Pagination
+	BaseData
+	Error      string
+	Feeds      []database.GetAllFeedFollowsByEmailRow
+	Pagination Pagination
 }
 
 type FeedPostsData struct {
-	Authenticated bool
-	Posts         []database.GetPostsByUserAndFeedWithBookmarksRow
-	Pagination    Pagination
+	BaseData
+	Posts      []database.GetPostsByUserAndFeedWithBookmarksRow
+	Pagination Pagination
 }
 
 type BookmarksData struct {
-	Authenticated bool
-	Posts         []database.GetBookmarkedPostsByDateRow
-	Pagination    Pagination
+	BaseData
+	Posts      []database.GetBookmarkedPostsByDateRow
+	Pagination Pagination
 }
 
 func (cfg *APIConfig) getHome(w http.ResponseWriter, r *http.Request, auth AuthResult) {
@@ -81,7 +86,7 @@ func (cfg *APIConfig) getHome(w http.ResponseWriter, r *http.Request, auth AuthR
 
 	if !auth.IsAuthenticated {
 		t.Execute(w, IndexData{
-			Authenticated: false,
+			BaseData: BaseData{Authenticated: false, Branding: cfg.Branding},
 		})
 		return
 	}
@@ -105,9 +110,9 @@ func (cfg *APIConfig) getHome(w http.ResponseWriter, r *http.Request, auth AuthR
 	}
 
 	err = t.Execute(w, IndexData{
-		Authenticated: true,
-		Posts:         posts,
-		Pagination:    pag,
+		BaseData:   BaseData{Authenticated: true, Branding: cfg.Branding},
+		Posts:      posts,
+		Pagination: pag,
 	})
 	if err != nil {
 		panic(err)
@@ -126,8 +131,8 @@ func (cfg *APIConfig) getAddFeed(w http.ResponseWriter, r *http.Request, auth Au
 		panic(err)
 	}
 	err = t.ExecuteTemplate(w, "layout", AddFeedData{
-		Authenticated: true,
-		Error:         error,
+		BaseData: BaseData{Authenticated: true, Branding: cfg.Branding},
+		Error:    error,
 	})
 	if err != nil {
 		panic(err)
@@ -165,10 +170,10 @@ func (cfg *APIConfig) getAllFeeds(w http.ResponseWriter, r *http.Request, auth A
 		panic(err)
 	}
 	err = t.ExecuteTemplate(w, "layout", AllFeedsData{
-		Authenticated: true,
-		Error:         error,
-		Feeds:         feeds,
-		Pagination:    pag,
+		BaseData:   BaseData{Authenticated: true, Branding: cfg.Branding},
+		Error:      error,
+		Feeds:      feeds,
+		Pagination: pag,
 	})
 	if err != nil {
 		panic(err)
@@ -212,9 +217,9 @@ func (cfg *APIConfig) getFeedPosts(w http.ResponseWriter, r *http.Request, auth 
 		panic(err)
 	}
 	err = t.ExecuteTemplate(w, "layout", FeedPostsData{
-		Authenticated: true,
-		Posts:         posts,
-		Pagination:    pag,
+		BaseData:   BaseData{Authenticated: true, Branding: cfg.Branding},
+		Posts:      posts,
+		Pagination: pag,
 	})
 	if err != nil {
 		panic(err)
@@ -251,9 +256,9 @@ func (cfg *APIConfig) getBookmarks(w http.ResponseWriter, r *http.Request, auth 
 		panic(err)
 	}
 	err = t.ExecuteTemplate(w, "layout", BookmarksData{
-		Authenticated: true,
-		Posts:         posts,
-		Pagination:    pag,
+		BaseData:   BaseData{Authenticated: true, Branding: cfg.Branding},
+		Posts:      posts,
+		Pagination: pag,
 	})
 	if err != nil {
 		panic(err)
@@ -269,10 +274,9 @@ func (cfg *APIConfig) getAbout(w http.ResponseWriter, r *http.Request, auth Auth
 	if err != nil {
 		panic(err)
 	}
-	err = t.ExecuteTemplate(w, "layout", struct {
-		Authenticated bool
-	}{
+	err = t.ExecuteTemplate(w, "layout", BaseData{
 		Authenticated: auth.IsAuthenticated,
+		Branding:      cfg.Branding,
 	})
 	if err != nil {
 		panic(err)
