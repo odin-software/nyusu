@@ -1,0 +1,22 @@
+name: Build and Deploy Docker Image
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: [self-hosted, tenma]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -t localhost:5000/nyusu:latest -t localhost:5000/nyusu:${{ github.sha }} .
+
+      - name: Push to local registry
+        run: |
+          docker push localhost:5000/nyusu:latest
+          docker push localhost:5000/nyusu:${{ github.sha }}
