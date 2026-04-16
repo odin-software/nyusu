@@ -3,17 +3,16 @@ package server
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"sync"
-	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/joho/godotenv"
+	hubclient "github.com/odin-software/hub-client"
 	"github.com/odin-software/nyusu/internal/database"
 	"github.com/odin-software/nyusu/internal/rss"
 	"github.com/pressly/goose/v3"
@@ -29,9 +28,7 @@ type Environment struct {
 	OIDCIssuerURL    string
 	OIDCClientID     string
 	OIDCClientSecret string
-	OIDCRedirectURL  string
-	EpsilonURL       string
-	EpsilonAPIKey    string
+	OIDCRedirectURL string
 }
 
 type Branding struct {
@@ -42,13 +39,6 @@ type Branding struct {
 	QuartaryColor  string
 	CardBg         string
 	BorderColor    string
-}
-
-// epsilonResponse is the shape returned by GET /api/v1/config.
-type epsilonResponse struct {
-	Service string            `json:"service"`
-	Config  map[string]string `json:"config"`
-	Global  map[string]string `json:"global"`
 }
 
 type APIConfig struct {
@@ -68,43 +58,37 @@ func NewConfig() APIConfig {
 		log.Println("Error loading .env file")
 	}
 
-	epsilonURL := os.Getenv("EPSILON_URL")
-	epsilonAPIKey := os.Getenv("EPSILON_API_KEY")
+	// Fetch config from Hub. Falls back to local env vars if Hub is
+	// not configured or unreachable.
+	cfg := hubclient.Load()
 
-	// Fetch config from Epsilon (service config + global branding).
-	// Falls back to local env vars if Epsilon is not configured or unreachable.
-	remote := fetchEpsilonConfig(epsilonURL, epsilonAPIKey)
-
-	// Build environment: Epsilon service config takes priority, env vars are fallback.
-	scrapper, err := strconv.Atoi(configValue(remote.Config, "SCRAPPER_TICK", os.Getenv("SCRAPPER_TICK")))
+	scrapper, err := strconv.Atoi(cfg.Get("SCRAPPER_TICK", os.Getenv("SCRAPPER_TICK")))
 	if err != nil {
 		scrapper = 20
 	}
 
-	environment := configValue(remote.Config, "ENVIRONMENT", os.Getenv("ENVIRONMENT"))
+	environment := cfg.Get("ENVIRONMENT", os.Getenv("ENVIRONMENT"))
 	if environment == "" {
 		environment = "development"
 	}
 
-	productionURL := configValue(remote.Config, "PRODUCTION_URL", os.Getenv("PRODUCTION_URL"))
+	productionURL := cfg.Get("PRODUCTION_URL", os.Getenv("PRODUCTION_URL"))
 	if productionURL == "" {
 		productionURL = "https://nyusu.odin.do"
 	}
 
-	port := configValue(remote.Config, "PORT", os.Getenv("PORT"))
+	port := cfg.Get("PORT", os.Getenv("PORT"))
 
 	env := Environment{
-		DBUrl:            configValue(remote.Config, "DB_URL", os.Getenv("DB_URL")),
+		DBUrl:            cfg.Get("DB_URL", os.Getenv("DB_URL")),
 		Port:             fmt.Sprintf(":%s", port),
 		Scrapper:         scrapper,
 		Environment:      environment,
 		ProductionURL:    productionURL,
-		OIDCIssuerURL:    configValue(remote.Config, "OIDC_ISSUER_URL", os.Getenv("OIDC_ISSUER_URL")),
-		OIDCClientID:     configValue(remote.Config, "OIDC_CLIENT_ID", os.Getenv("OIDC_CLIENT_ID")),
-		OIDCClientSecret: configValue(remote.Config, "OIDC_CLIENT_SECRET", os.Getenv("OIDC_CLIENT_SECRET")),
-		OIDCRedirectURL:  configValue(remote.Config, "OIDC_REDIRECT_URL", os.Getenv("OIDC_REDIRECT_URL")),
-		EpsilonURL:       epsilonURL,
-		EpsilonAPIKey:    epsilonAPIKey,
+		OIDCIssuerURL:    cfg.Get("OIDC_ISSUER_URL", os.Getenv("OIDC_ISSUER_URL")),
+		OIDCClientID:     cfg.Get("OIDC_CLIENT_ID", os.Getenv("OIDC_CLIENT_ID")),
+		OIDCClientSecret: cfg.Get("OIDC_CLIENT_SECRET", os.Getenv("OIDC_CLIENT_SECRET")),
+		OIDCRedirectURL:  cfg.Get("OIDC_REDIRECT_URL", os.Getenv("OIDC_REDIRECT_URL")),
 	}
 
 	ctx := context.Background()
@@ -137,7 +121,10 @@ func NewConfig() APIConfig {
 		Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
 	}
 
-	branding := buildBranding(remote.Global)
+	// Global branding: Epsilon had a separate global config section. Hub
+	// doesn't (yet), so we pass an empty map — buildBranding falls back
+	// to Nyusu's defaults for every key.
+	branding := buildBranding(map[string]string{})
 
 	return APIConfig{
 		ctx:          ctx,
@@ -157,59 +144,9 @@ func runMigrations(db *sql.DB) error {
 	return goose.Up(db, "sql/schema")
 }
 
-// configValue returns the Epsilon config value for key if present,
-// otherwise falls back to the local env var value.
-func configValue(remote map[string]string, key, fallback string) string {
-	if remote != nil {
-		if v, ok := remote[key]; ok && v != "" {
-			return v
-		}
-	}
-	return fallback
-}
-
-// fetchEpsilonConfig calls Epsilon's GET /api/v1/config to retrieve
-// service-specific config and global config. Returns empty maps on any error.
-func fetchEpsilonConfig(epsilonURL, apiKey string) epsilonResponse {
-	empty := epsilonResponse{
-		Config: map[string]string{},
-		Global: map[string]string{},
-	}
-
-	if epsilonURL == "" || apiKey == "" {
-		log.Println("Epsilon not configured — using local env vars")
-		return empty
-	}
-
-	client := &http.Client{Timeout: 5 * time.Second}
-	req, err := http.NewRequest("GET", epsilonURL+"/api/v1/config", nil)
-	if err != nil {
-		log.Printf("Warning: Failed to create Epsilon request: %v", err)
-		return empty
-	}
-	req.Header.Set("Authorization", "Bearer "+apiKey)
-
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Printf("Warning: Failed to fetch config from Epsilon: %v", err)
-		return empty
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		log.Printf("Warning: Epsilon returned status %d", resp.StatusCode)
-		return empty
-	}
-
-	var result epsilonResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		log.Printf("Warning: Failed to parse Epsilon response: %v", err)
-		return empty
-	}
-
-	log.Println("Fetched config from Epsilon")
-	return result
-}
+// configValue and fetchEpsilonConfig were here — removed in the Hub
+// migration (v0.4.3). Config is now fetched via hubclient.Load() at
+// the top of NewConfig().
 
 // buildBranding extracts branding values from the global config map,
 // falling back to Nyusu's defaults for any missing key.
