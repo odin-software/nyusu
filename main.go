@@ -46,6 +46,6 @@ func main() {
 		}
 	}()
 
-	log.Printf("server is listening at %s", cfg.Env.Port)
+	log.Printf("Nyusu %s listening at %s", Version, cfg.Env.Port)
 	log.Fatal(http.ListenAndServe(cfg.Env.Port, mux))
 }
