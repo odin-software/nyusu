@@ -1,5 +1,7 @@
 # Nyusu
 
+Currently paused, evaluating if I will continue using it in the future.
+
 RSS feed reader built with Go, PostgreSQL, and Authentik OIDC.
 
 ## Local Setup
